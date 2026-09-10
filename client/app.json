@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "GuaraniApp",
+    "slug": "guaraniapp-oriente-boliviano",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/aguara_mascot.jpg",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/images/aguara_mascot.jpg",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF8F0"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/aguara_mascot.jpg",
+        "backgroundColor": "#FFF8F0"
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/aguara_mascot.jpg",
+      "bundler": "metro"
+    }
+  }
+}
