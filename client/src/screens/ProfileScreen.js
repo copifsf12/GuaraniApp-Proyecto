@@ -14,46 +14,7 @@ import Header from '../components/Header';
 import MascotAguara from '../components/MascotAguara';
 
 export default function ProfileScreen() {
-  const { user, setCurrentScreen } = useApp();
-
-  const achievements = [
-    {
-      id: 1,
-      name: 'Hablante del Monte',
-      name_guarani: 'Ka\'aguy Ñe\'ẽhára',
-      desc: 'Aprender 25 palabras del Chaco',
-      icon: 'leaf',
-      unlocked: true,
-      progress: '25/25'
-    },
-    {
-      id: 2,
-      name: 'Fuego Sagrado (Tatá)',
-      name_guarani: 'Tatá Rendy',
-      desc: 'Racha de 7 días consecutivos',
-      icon: 'flame',
-      unlocked: user.streakDays >= 7,
-      progress: `${user.streakDays}/7 días`
-    },
-    {
-      id: 3,
-      name: 'Vasija de Sabiduría',
-      name_guarani: 'Yapepó Arakuaa',
-      desc: 'Acumular 200 monedas Mba\'e',
-      icon: 'trophy',
-      unlocked: user.coinsMbae >= 200,
-      progress: `${user.coinsMbae}/200`
-    },
-    {
-      id: 4,
-      name: 'Amigo de Aguará',
-      name_guarani: 'Aguará Irũ',
-      desc: 'Vestir a tu mascota con accesorios',
-      icon: 'shirt',
-      unlocked: user.inventory.length > 1,
-      progress: `${user.inventory.length}/2 accesorios`
-    }
-  ];
+  const { user, achievements, setCurrentScreen } = useApp();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -134,7 +95,7 @@ export default function ProfileScreen() {
               </View>
               <Text style={styles.achievementName}>{ach.name}</Text>
               <Text style={styles.achievementGuarani}>{ach.name_guarani}</Text>
-              <Text style={styles.achievementDesc}>{ach.desc}</Text>
+              <Text style={styles.achievementDesc}>{ach.description}</Text>
               <View style={styles.progressBadge}>
                 <Text style={styles.progressBadgeText}>{ach.progress}</Text>
               </View>

@@ -13,10 +13,9 @@ import { useApp } from '../context/AppContext';
 import Header from '../components/Header';
 import MascotAguara from '../components/MascotAguara';
 import CulturalCapsuleModal from '../components/CulturalCapsuleModal';
-import { LOCAL_UNITS } from '../data/initialData';
 
 export default function PathScreen() {
-  const { user, navigateTo } = useApp();
+  const { user, units, unitsLoading, navigateTo } = useApp();
   const [activeCapsule, setActiveCapsule] = useState(null);
 
   // Winding serpentine horizontal offsets for nodes
@@ -35,7 +34,12 @@ export default function PathScreen() {
       <Header onVariantPress={() => navigateTo('onboarding')} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {LOCAL_UNITS.map(unit => (
+        {unitsLoading && units.length === 0 && (
+          <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textMuted }}>
+            Cargando tu sendero de aprendizaje...
+          </Text>
+        )}
+        {units.map(unit => (
           <View key={unit.id} style={styles.unitContainer}>
             {/* Unit Header Banner */}
             <View style={[styles.unitBanner, { backgroundColor: unit.theme_color }]}>

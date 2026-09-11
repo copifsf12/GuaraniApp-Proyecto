@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  Alert
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
@@ -15,33 +15,45 @@ import { useApp } from '../context/AppContext';
 import MascotAguara from '../components/MascotAguara';
 
 export default function AuthScreen() {
-  const { setCurrentScreen, setUser } = useApp();
+  const { setCurrentScreen, login, register, authLoading, onboardingDraft } = useApp();
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [formError, setFormError] = useState(null);
+  const [infoMessage, setInfoMessage] = useState(null);
 
-  const handleSubmit = () => {
-    // Foolproof validation: if fields are empty, assign friendly defaults
-    const finalUsername = username.trim() || (isLogin ? 'Estudiante Chaqueño' : 'Nuevo Explorador');
-    const finalEmail = email.trim() || 'usuario@guaraniapp.bo';
+  const handleSubmit = async () => {
+    setFormError(null);
+    setInfoMessage(null);
 
-    setUser(prev => ({
-      ...prev,
-      username: finalUsername,
-      email: finalEmail
-    }));
+    if (!email.trim() || !password.trim()) {
+      setFormError('Ingresa tu correo y contraseña.');
+      return;
+    }
 
-    setCurrentScreen('main');
-  };
-
-  const handleGuestEntry = () => {
-    setUser(prev => ({
-      ...prev,
-      username: 'Visitante del Chaco',
-      email: 'invitado@guaraniapp.bo'
-    }));
-    setCurrentScreen('main');
+    try {
+      if (isLogin) {
+        await login({ email: email.trim(), password });
+        // AppContext navega a 'main' automáticamente si el login fue exitoso
+      } else {
+        const data = await register({
+          email: email.trim(),
+          password,
+          username: username.trim() || 'Nuevo Explorador',
+          dialect_variant: onboardingDraft.dialectVariant,
+          age_group: onboardingDraft.ageGroup,
+          daily_goal_minutes: onboardingDraft.dailyGoalMinutes
+        });
+        if (!data.session) {
+          // El proyecto de Supabase exige confirmar el correo antes de iniciar sesión
+          setInfoMessage(data.message);
+          setIsLogin(true);
+        }
+      }
+    } catch (e) {
+      setFormError(e.message);
+    }
   };
 
   return (
@@ -70,7 +82,7 @@ export default function AuthScreen() {
         <View style={styles.tabSwitcher}>
           <TouchableOpacity
             style={[styles.tabButton, isLogin && styles.tabButtonActive]}
-            onPress={() => setIsLogin(true)}
+            onPress={() => { setIsLogin(true); setFormError(null); }}
           >
             <Text style={[styles.tabButtonText, isLogin && styles.tabButtonTextActive]}>
               Iniciar Sesión
@@ -78,7 +90,7 @@ export default function AuthScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tabButton, !isLogin && styles.tabButtonActive]}
-            onPress={() => setIsLogin(false)}
+            onPress={() => { setIsLogin(false); setFormError(null); }}
           >
             <Text style={[styles.tabButtonText, !isLogin && styles.tabButtonTextActive]}>
               Crear Cuenta
@@ -133,38 +145,24 @@ export default function AuthScreen() {
             </View>
           </View>
 
+          {formError && <Text style={styles.errorText}>{formError}</Text>}
+          {infoMessage && <Text style={styles.infoText}>{infoMessage}</Text>}
+
           {/* Submit Button */}
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, authLoading && { opacity: 0.7 }]}
             onPress={handleSubmit}
             activeOpacity={0.85}
+            disabled={authLoading}
           >
-            <Text style={styles.submitButtonText}>
-              {isLogin ? 'Ingresar a mi cuenta' : 'Registrarme y Empezar'}
-            </Text>
+            {authLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.submitButtonText}>
+                {isLogin ? 'Ingresar a mi cuenta' : 'Registrarme y Empezar'}
+              </Text>
+            )}
           </TouchableOpacity>
-
-          {/* OR Divider */}
-          <View style={styles.orDivider}>
-            <View style={styles.line} />
-            <Text style={styles.orText}>O TAMBIÉN</Text>
-            <View style={styles.line} />
-          </View>
-
-          {/* FOOLPROOF GUEST ACCESS (No typing required) */}
-          <TouchableOpacity
-            style={styles.guestButton}
-            onPress={handleGuestEntry}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="flash" size={20} color={colors.montePrimary} />
-            <Text style={styles.guestButtonText}>
-              Entrar como Invitado (Sin contraseñas)
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.guestHint}>
-            No perderás nada: tus puntos se guardan automáticamente en tu dispositivo.
-          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -267,6 +265,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
+  },
+  errorText: {
+    color: '#C0392B',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  infoText: {
+    color: colors.monteDark,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 10,
+    textAlign: 'center',
   },
   orDivider: {
     flexDirection: 'row',

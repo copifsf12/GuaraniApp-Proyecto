@@ -13,20 +13,20 @@ import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 import Header from '../components/Header';
 import MascotAguara from '../components/MascotAguara';
-import { LOCAL_SHOP_ITEMS } from '../data/initialData';
 
 export default function ShopScreen() {
-  const { user, buyShopItem, equipItem } = useApp();
+  const { user, shopItems, buyShopItem, equipItem } = useApp();
   const [purchaseNotice, setPurchaseNotice] = useState(null);
 
-  const handleAction = (item) => {
-    const isOwned = user.inventory.includes(item.key);
+  const handleAction = async (item) => {
+    // Los potenciadores (ej: recarga de vidas) son consumibles: siempre se compran de nuevo
+    const isOwned = item.category !== 'powerup' && user.inventory.includes(item.key);
 
     if (isOwned) {
-      equipItem(item.category, item.key);
+      await equipItem(item.category, item.key);
       setPurchaseNotice(`¡Equipaste: ${item.name}!`);
     } else {
-      const result = buyShopItem(item.key);
+      const result = await buyShopItem(item.key);
       if (result.success) {
         setPurchaseNotice(`¡Compraste y equipaste: ${item.name}!`);
       } else {
@@ -64,7 +64,7 @@ export default function ShopScreen() {
         {/* Catalog Categories */}
         <Text style={styles.sectionHeader}>Ropa y Accesorios para Aguará</Text>
 
-        {LOCAL_SHOP_ITEMS.filter(i => i.category === 'hat' || i.category === 'costume').map(item => {
+        {shopItems.filter(i => i.category === 'hat' || i.category === 'costume').map(item => {
           const isOwned = user.inventory.includes(item.key);
           const isEquipped = user.equippedHat === item.key || user.equippedOutfit === item.key;
 
@@ -109,7 +109,7 @@ export default function ShopScreen() {
 
         <Text style={[styles.sectionHeader, { marginTop: 24 }]}>Potenciadores del Chaco</Text>
 
-        {LOCAL_SHOP_ITEMS.filter(i => i.category === 'powerup').map(item => {
+        {shopItems.filter(i => i.category === 'powerup').map(item => {
           return (
             <View key={item.id} style={styles.shopCard}>
               <View style={[styles.shopIconCircle, { backgroundColor: colors.montePastel }]}>

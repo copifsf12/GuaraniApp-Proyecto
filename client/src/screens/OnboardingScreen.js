@@ -14,29 +14,24 @@ import MascotAguara from '../components/MascotAguara';
 import { DIALECT_VARIANTS, AGE_GROUPS, DAILY_GOALS } from '../data/initialData';
 
 export default function OnboardingScreen() {
-  const { user, setUser, setCurrentScreen, navigateTo } = useApp();
+  const { onboardingDraft, setOnboardingDraft, setCurrentScreen } = useApp();
 
   // Onboarding Step: 0 = Welcome, 1 = Dialect, 2 = Age, 3 = Goal, 4 = Level
   const [step, setStep] = useState(0);
 
-  const [selectedVariant, setSelectedVariant] = useState(user.dialectVariant || 'ava');
-  const [selectedAge, setSelectedAge] = useState(user.ageGroup || 'adulto');
+  const [selectedVariant, setSelectedVariant] = useState(onboardingDraft.dialectVariant);
+  const [selectedAge, setSelectedAge] = useState(onboardingDraft.ageGroup);
   const [selectedGoal, setSelectedGoal] = useState('regular');
 
-  // Handle finalize onboarding
-  const handleFinishOnboarding = (startMode) => {
-    setUser(prev => ({
-      ...prev,
+  // Handle finalize onboarding: guarda las preferencias y pasa a crear la cuenta.
+  // (Ya no hay modo invitado: para guardar progreso, hace falta una cuenta real)
+  const handleFinishOnboarding = () => {
+    setOnboardingDraft({
       dialectVariant: selectedVariant,
       ageGroup: selectedAge,
       dailyGoalMinutes: selectedGoal === 'casual' ? 5 : selectedGoal === 'regular' ? 10 : selectedGoal === 'serio' ? 15 : 20
-    }));
-
-    if (startMode === 'diagnostic') {
-      navigateTo('lesson', { lessonId: 1 });
-    } else {
-      setCurrentScreen('main');
-    }
+    });
+    setCurrentScreen('auth');
   };
 
   // -------------------------------------------------------------
@@ -76,15 +71,6 @@ export default function OnboardingScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.secondaryButtonText}>Ya tengo una cuenta</Text>
-          </TouchableOpacity>
-
-          {/* Foolproof Guest Mode button */}
-          <TouchableOpacity
-            style={styles.guestQuickButton}
-            onPress={() => setCurrentScreen('main')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.guestQuickText}>O explorar directamente sin registro</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

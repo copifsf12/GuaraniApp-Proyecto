@@ -11,10 +11,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 import Header from '../components/Header';
-import { LOCAL_STORIES } from '../data/initialData';
 
 export default function StoriesScreen() {
-  const { speakText } = useApp();
+  const { speakText, stories, completeStory } = useApp();
   const [selectedStory, setSelectedStory] = useState(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [userAnswerIndex, setUserAnswerIndex] = useState(null);
@@ -48,6 +47,7 @@ export default function StoriesScreen() {
       }
     } else {
       setStoryCompleted(true);
+      completeStory(selectedStory.id);
     }
   };
 
@@ -194,7 +194,7 @@ export default function StoriesScreen() {
         </View>
 
         {/* Stories List */}
-        {LOCAL_STORIES.map(story => (
+        {stories.map(story => (
           <TouchableOpacity
             key={story.id}
             style={styles.storyCard}
