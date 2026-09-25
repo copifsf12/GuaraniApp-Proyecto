@@ -5,7 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView
+  SafeAreaView,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
@@ -13,12 +14,14 @@ import { useApp } from '../context/AppContext';
 import Header from '../components/Header';
 import MascotAguara from '../components/MascotAguara';
 import CulturalCapsuleModal from '../components/CulturalCapsuleModal';
+import HeartsModal from '../components/HeartsModal';
 
 export default function PathScreen() {
-  const { user, units, unitsLoading, navigateTo } = useApp();
+  const { user, units, unitsLoading, navigateTo, buyShopItem } = useApp();
   const [activeCapsule, setActiveCapsule] = useState(null);
+  const [heartsModalVisible, setHeartsModalVisible] = useState(false);
+  const [buyingRefill, setBuyingRefill] = useState(false);
 
-  // Winding serpentine horizontal offsets for nodes
   const nodeOffsets = [0, 50, -40, 45, 0];
 
   const handleNodePress = (lesson) => {
@@ -26,12 +29,26 @@ export default function PathScreen() {
       setActiveCapsule(lesson.cultural_capsule);
       return;
     }
-    navigateTo('lesson', { lessonId: lesson.id });
+    navigateTo('lesson_tutorial', { lessonId: lesson.id });
+  };
+
+  const handleBuyRefill = async () => {
+    setBuyingRefill(true);
+    const result = await buyShopItem('refill_hearts');
+    setBuyingRefill(false);
+    if (result.success) {
+      setHeartsModalVisible(false);
+    } else {
+      Alert.alert('Error', result.message || 'No se pudo recargar');
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header onVariantPress={() => navigateTo('onboarding')} />
+      <Header
+        onVariantPress={() => navigateTo('onboarding')}
+        onHeartsPress={() => setHeartsModalVisible(true)}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {unitsLoading && units.length === 0 && (
@@ -41,7 +58,6 @@ export default function PathScreen() {
         )}
         {units.map(unit => (
           <View key={unit.id} style={styles.unitContainer}>
-            {/* Unit Header Banner */}
             <View style={[styles.unitBanner, { backgroundColor: unit.theme_color }]}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.unitNumber}>UNIDAD {unit.unit_number}</Text>
@@ -57,13 +73,11 @@ export default function PathScreen() {
               </View>
             </View>
 
-            {/* Path description badge */}
             <View style={styles.kaaguyBadge}>
               <Ionicons name="trail-sign" size={16} color={colors.montePrimary} />
               <Text style={styles.kaaguyText}>Sendero Ka'aguy (Monte Chaqueño)</Text>
             </View>
 
-            {/* Winding Lesson Path Nodes */}
             <View style={styles.pathTrail}>
               {unit.lessons.map((lesson, idx) => {
                 const isCompleted = user.completedLessons.includes(lesson.id);
@@ -74,12 +88,8 @@ export default function PathScreen() {
                 return (
                   <View
                     key={lesson.id}
-                    style={[
-                      styles.nodeWrapper,
-                      { transform: [{ translateX: offset }] }
-                    ]}
+                    style={[styles.nodeWrapper, { transform: [{ translateX: offset }] }]}
                   >
-                    {/* Node floating tool-tip for active lesson */}
                     {isCurrent && (
                       <View style={styles.startBubble}>
                         <Text style={styles.startBubbleText}>¡EMPEZAR!</Text>
@@ -87,7 +97,6 @@ export default function PathScreen() {
                       </View>
                     )}
 
-                    {/* Lesson Circle Button */}
                     <TouchableOpacity
                       activeOpacity={0.8}
                       onPress={() => !isLocked && handleNodePress(lesson)}
@@ -101,7 +110,6 @@ export default function PathScreen() {
                         lesson.type === 'checkpoint_teta' && styles.nodeTeta,
                       ]}
                     >
-                      {/* Icon inside node */}
                       {lesson.type === 'chest' ? (
                         <Ionicons name="gift" size={32} color={isCompleted ? colors.solGold : '#B8860B'} />
                       ) : lesson.type === 'checkpoint_teta' ? (
@@ -114,7 +122,6 @@ export default function PathScreen() {
                         <Ionicons name="lock-closed" size={28} color="#9E9E9E" />
                       )}
 
-                      {/* Crown over completed node */}
                       {isCompleted && lesson.type !== 'chest' && (
                         <View style={styles.crownBadge}>
                           <Ionicons name="ribbon" size={14} color="#FFFFFF" />
@@ -122,7 +129,6 @@ export default function PathScreen() {
                       )}
                     </TouchableOpacity>
 
-                    {/* Node Label */}
                     <Text style={[styles.nodeTitle, isLocked && styles.nodeTitleLocked]}>
                       {lesson.title}
                     </Text>
@@ -133,7 +139,6 @@ export default function PathScreen() {
           </View>
         ))}
 
-        {/* Mascot cheer on path */}
         <View style={styles.pathCheerSection}>
           <MascotAguara
             size={110}
@@ -142,7 +147,6 @@ export default function PathScreen() {
         </View>
       </ScrollView>
 
-      {/* Cultural Capsule Modal if chest tapped */}
       {activeCapsule && (
         <CulturalCapsuleModal
           visible={!!activeCapsule}
@@ -151,21 +155,22 @@ export default function PathScreen() {
           onClose={() => setActiveCapsule(null)}
         />
       )}
+
+      <HeartsModal
+        visible={heartsModalVisible}
+        user={user}
+        buyLoading={buyingRefill}
+        onClose={() => setHeartsModalVisible(false)}
+        onBuyRefill={handleBuyRefill}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.sandBackground,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  unitContainer: {
-    marginBottom: 24,
-  },
+  container: { flex: 1, backgroundColor: colors.sandBackground },
+  scrollContent: { paddingBottom: 40 },
+  unitContainer: { marginBottom: 24 },
   unitBanner: {
     flexDirection: 'row',
     alignItems: 'center',

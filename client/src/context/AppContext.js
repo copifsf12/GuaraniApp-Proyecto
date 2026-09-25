@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Platform } from 'react-native';
-import { DIALECT_VARIANTS } from '../data/initialData';
+import * as Speech from 'expo-speech';
+import {
+  DIALECT_VARIANTS
+} from '../data/initialData';
 import {
   registerRequest,
   loginRequest,
@@ -11,60 +14,49 @@ import {
   fetchStories,
   completeStoryRequest,
   fetchShop,
-  purchaseShopItemRequest,
-  saveSettings,
+  purchaseItemRequest,
+  translateRequest,
+  fetchTranslationHistory,
+  toggleFavoriteTranslation,
   sessionStorage
 } from '../api/apiClient';
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  // Navigation State
-  const [currentScreen, setCurrentScreen] = useState('splash'); // 'splash' | 'onboarding' | 'auth' | 'main' | 'lesson' | 'lesson_complete' | 'story_reader'
-  const [activeTab, setActiveTab] = useState('learn'); // 'learn' | 'stories' | 'leagues' | 'shop' | 'profile'
+  const [currentScreen, setCurrentScreen] = useState('splash');
+  const [activeTab, setActiveTab] = useState('learn');
 
-  // Preferencias elegidas en el onboarding, antes de crear la cuenta
   const [onboardingDraft, setOnboardingDraft] = useState({
     dialectVariant: 'ava',
     ageGroup: 'adulto',
     dailyGoalMinutes: 10
   });
 
-  // Sesión real contra el backend / Supabase
   const [token, setToken] = useState(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
 
-  // Contenido del curso, cargado desde Supabase vía el backend
   const [units, setUnits] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(false);
-
-  // Cuentos (Kassukuaa) y tienda, cargados desde Supabase vía el backend
   const [stories, setStories] = useState([]);
-  const [storiesLoading, setStoriesLoading] = useState(false);
   const [shopItems, setShopItems] = useState([]);
-  const [shopLoading, setShopLoading] = useState(false);
-
-  // Logros/insignias, calculados en el backend a partir del progreso real
   const [achievements, setAchievements] = useState([]);
+  const [translationHistory, setTranslationHistory] = useState([]);
 
-  // User Profile & Gamification (se llena con datos reales tras login)
   const [user, setUser] = useState(null);
 
-  // Current Active Lesson & Story state
   const [activeLesson, setActiveLesson] = useState(null);
   const [activeStory, setActiveStory] = useState(null);
   const [lastLessonResult, setLastLessonResult] = useState(null);
   const [activeExercises, setActiveExercises] = useState([]);
 
-  // Accessibility / Easy Mode
   const [accessibilityMode, setAccessibilityMode] = useState({
     largeText: false,
     autoAudio: true,
     simplifiedUI: false
   });
 
-  // Al abrir la app, intenta recuperar una sesión guardada
   useEffect(() => {
     (async () => {
       const saved = await sessionStorage.loadSession();
@@ -73,12 +65,7 @@ export const AppProvider = ({ children }) => {
           const profileData = await fetchProfile(saved.access_token);
           setToken(saved.access_token);
           setUser(mapProfileToUser(profileData.profile));
-          setAchievements(profileData.achievements || []);
-          await Promise.all([
-            loadUnits(saved.access_token),
-            loadStories(saved.access_token),
-            loadShop(saved.access_token)
-          ]);
+          await loadAllContent(saved.access_token);
         } catch (e) {
           await sessionStorage.clearSession();
         }
@@ -86,7 +73,7 @@ export const AppProvider = ({ children }) => {
     })();
   }, []);
 
-  const mapProfileToUser = (profile, inventory = []) => ({
+  const mapProfileToUser = (profile) => ({
     id: profile.id,
     username: profile.username,
     email: profile.email,
@@ -95,6 +82,7 @@ export const AppProvider = ({ children }) => {
     dailyGoalMinutes: profile.daily_goal_minutes,
     hearts: profile.hearts,
     maxHearts: profile.max_hearts,
+    heartRegenAt: profile.heart_regen_at || null,
     coinsMbae: profile.coins_mbae,
     xpTotal: profile.xp_total,
     streakDays: profile.streak_days,
@@ -102,8 +90,9 @@ export const AppProvider = ({ children }) => {
     equippedHat: profile.equipped_hat,
     equippedOutfit: profile.equipped_outfit,
     equippedTheme: profile.equipped_theme,
-    completedLessons: [],
-    inventory
+    completedLessons: profile.completed_lessons || [],
+    inventory: profile.inventory || [],
+    wordsLearned: profile.words_learned ?? profile.wordsLearned ?? 0
   });
 
   const loadUnits = async (authToken) => {
@@ -112,7 +101,15 @@ export const AppProvider = ({ children }) => {
       const { units: fetchedUnits, userStats } = await fetchUnits(authToken);
       setUnits(fetchedUnits);
       if (userStats) {
-        setUser(prev => prev ? { ...prev, hearts: userStats.hearts, coinsMbae: userStats.coins_mbae, streakDays: userStats.streak_days, xpTotal: userStats.xp_total } : prev);
+        setUser(prev => prev ? {
+          ...prev,
+          hearts: userStats.hearts,
+          maxHearts: userStats.max_hearts,
+          heartRegenAt: userStats.heart_regen_at || null,
+          coinsMbae: userStats.coins_mbae,
+          streakDays: userStats.streak_days,
+          xpTotal: userStats.xp_total
+        } : prev);
       }
     } catch (e) {
       console.warn('No se pudieron cargar las unidades:', e.message);
@@ -121,63 +118,81 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Carga los logros/insignias (calculados en el backend según el progreso real)
-  const loadAchievements = async (authToken) => {
-    try {
-      const profileData = await fetchProfile(authToken);
-      setAchievements(profileData.achievements || []);
-    } catch (e) {
-      console.warn('No se pudieron cargar los logros:', e.message);
-    }
-  };
-
-  // Carga los cuentos reales (Kassukuaa) desde Supabase
   const loadStories = async (authToken) => {
-    setStoriesLoading(true);
     try {
       const fetchedStories = await fetchStories(authToken);
       setStories(fetchedStories);
     } catch (e) {
       console.warn('No se pudieron cargar los cuentos:', e.message);
-    } finally {
-      setStoriesLoading(false);
     }
   };
 
-  // Carga el catálogo de la tienda y sincroniza el inventario real del usuario
   const loadShop = async (authToken) => {
-    setShopLoading(true);
     try {
       const { items, balance } = await fetchShop(authToken);
       setShopItems(items);
-      const ownedKeys = items.filter(i => i.is_purchased).map(i => i.key);
-      setUser(prev => prev ? { ...prev, coinsMbae: balance, inventory: ownedKeys } : prev);
+      const inventory = items.filter(i => i.is_purchased).map(i => i.key);
+      setUser(prev => prev ? { ...prev, inventory, coinsMbae: balance } : prev);
     } catch (e) {
       console.warn('No se pudo cargar la tienda:', e.message);
-    } finally {
-      setShopLoading(false);
     }
   };
 
-  // ---- Autenticación real ----
-  const register = async ({ email, password, username, dialect_variant, age_group, daily_goal_minutes }) => {
+  const loadAllContent = async (authToken) => {
+    await Promise.all([loadUnits(authToken), loadStories(authToken), loadShop(authToken)]);
+    try {
+      const profileData = await fetchProfile(authToken);
+      setAchievements(profileData.achievements || []);
+      const wl = profileData.profile?.words_learned ?? profileData.profile?.wordsLearned;
+      if (typeof wl === 'number') {
+        setUser(prev => prev ? { ...prev, wordsLearned: wl } : prev);
+      }
+    } catch (e) {
+      console.warn('No se pudieron cargar los logros:', e.message);
+    }
+  };
+
+  const loadAchievements = async () => {
+    if (!token) return;
+    try {
+      const profileData = await fetchProfile(token);
+      setAchievements(profileData.achievements || []);
+      const wl = profileData.profile?.words_learned ?? profileData.profile?.wordsLearned;
+      if (typeof wl === 'number') {
+        setUser(prev => prev ? { ...prev, wordsLearned: wl } : prev);
+      }
+    } catch (e) {
+      console.warn('No se pudieron recargar los logros:', e.message);
+    }
+  };
+
+  const register = async ({
+    email,
+    password,
+    username,
+    dialect_variant,
+    age_group,
+    daily_goal_minutes
+  }) => {
     setAuthLoading(true);
     setAuthError(null);
+
     try {
-      const data = await registerRequest({ email, password, username, dialect_variant, age_group, daily_goal_minutes });
-      if (data.session) {
-        await sessionStorage.saveSession(data.session);
-        setToken(data.session.access_token);
-        setUser(mapProfileToUser(data.user));
-        await Promise.all([
-          loadUnits(data.session.access_token),
-            loadAchievements(data.session.access_token),
-          loadStories(data.session.access_token),
-          loadShop(data.session.access_token)
-        ]);
-        setCurrentScreen('main');
-      }
-      return data; // incluye "message" (ej: pide confirmar email)
+      const data = await registerRequest({
+        email,
+        password,
+        username,
+        dialect_variant,
+        age_group,
+        daily_goal_minutes
+      });
+
+      return {
+        ...data,
+        message:
+          "✅ Cuenta creada exitosamente. Ahora inicia sesión con tu correo y contraseña."
+      };
+
     } catch (e) {
       setAuthError(e.message);
       throw e;
@@ -194,13 +209,10 @@ export const AppProvider = ({ children }) => {
       await sessionStorage.saveSession(data.session);
       setToken(data.session.access_token);
       setUser(mapProfileToUser(data.user));
-      await Promise.all([
-        loadUnits(data.session.access_token),
-        loadAchievements(data.session.access_token),
-        loadStories(data.session.access_token),
-        loadShop(data.session.access_token)
-      ]);
-      setCurrentScreen('main');
+      await loadAllContent(data.session.access_token);
+
+      setCurrentScreen('welcome');
+
       return data;
     } catch (e) {
       setAuthError(e.message);
@@ -215,41 +227,44 @@ export const AppProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setUnits([]);
-    setStories([]);
-    setShopItems([]);
-    setAchievements([]);
     setCurrentScreen('auth');
   };
 
-  // Speech Pronunciation Function (cross-platform, works on Web and Mobile)
+  // 🔊 Pronunciación: web = speechSynthesis, móvil = expo-speech
   const speakText = (text) => {
+    if (!text) return;
     try {
       if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        // Web: usar la voz del navegador
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.85; // Slightly slower for clear learning
+        utterance.rate = 0.85;
         utterance.pitch = 1.0;
-        // Search for Spanish or Portuguese voice as approximation for Guaraní phonetics
+        utterance.lang = 'es-ES';
         const voices = window.speechSynthesis.getVoices();
         const esVoice = voices.find(v => v.lang.includes('es')) || voices[0];
         if (esVoice) utterance.voice = esVoice;
         window.speechSynthesis.speak(utterance);
       } else {
-        console.log('[Audio Guaraní Pronunciación]:', text);
+        // Móvil: usar expo-speech
+        Speech.stop();
+        Speech.speak(text, {
+          language: 'es-ES',
+          pitch: 1.0,
+          rate: 0.85
+        });
       }
     } catch (e) {
       console.warn('Audio no disponible:', e);
     }
   };
 
-  // Carga los ejercicios reales de una lección (desde Supabase)
   const loadLessonExercises = async (lessonId) => {
     const data = await fetchLessonExercises(token, lessonId);
     setActiveExercises(data.exercises);
     return data.exercises;
   };
 
-  // Lesson Completion Action: ahora guarda el progreso real en Supabase
   const completeLesson = async (lessonId, metrics) => {
     try {
       const result = await completeLessonRequest(token, lessonId, {
@@ -261,7 +276,11 @@ export const AppProvider = ({ children }) => {
         ...prev,
         xpTotal: result.user.xp_total,
         coinsMbae: result.user.coins_mbae,
-        streakDays: result.user.streak_days
+        streakDays: result.user.streak_days,
+        heartRegenAt: result.user.heart_regen_at || prev.heartRegenAt || null,
+        completedLessons: prev.completedLessons.includes(lessonId)
+          ? prev.completedLessons
+          : [...prev.completedLessons, lessonId]
       }));
 
       setLastLessonResult({
@@ -273,11 +292,12 @@ export const AppProvider = ({ children }) => {
         correctCount: metrics?.correctCount ?? 0,
         incorrectCount: metrics?.incorrectCount ?? 0,
         formattedTime: metrics?.formattedTime ?? '0:45',
-        culturalCapsule: result.cultural_capsule
+        culturalCapsule: result.cultural_capsule,
+        newlyUnlockedAchievements: result.newly_unlocked_achievements || []
       });
 
-      // Refresca las unidades para reflejar la lección desbloqueada siguiente
       await loadUnits(token);
+      await loadAchievements();
     } catch (e) {
       console.warn('Error completando la lección:', e.message);
     }
@@ -285,7 +305,32 @@ export const AppProvider = ({ children }) => {
     setCurrentScreen('lesson_complete');
   };
 
-  // Lose a heart on mistake
+  const goToNextLesson = async () => {
+    if (!lastLessonResult?.lessonId) {
+      setCurrentScreen('main');
+      return;
+    }
+
+    const allLessons = units
+      .flatMap(u => u.lessons || [])
+      .sort((a, b) => a.id - b.id);
+
+    const currentIndex = allLessons.findIndex(l => l.id === lastLessonResult.lessonId);
+    const nextLesson = allLessons[currentIndex + 1];
+
+    if (nextLesson) {
+      setActiveLesson(nextLesson);
+      try {
+        await loadLessonExercises(nextLesson.id);
+      } catch (e) {
+        console.warn('No se pudieron cargar los ejercicios:', e.message);
+      }
+      setCurrentScreen('lesson_tutorial');
+    } else {
+      setCurrentScreen('main');
+    }
+  };
+
   const loseHeart = () => {
     setUser(prev => ({
       ...prev,
@@ -293,62 +338,77 @@ export const AppProvider = ({ children }) => {
     }));
   };
 
-  // Compra un artículo real en Supabase (descuenta monedas y actualiza inventario)
-  const buyShopItem = async (itemKey) => {
-    try {
-      const result = await purchaseShopItemRequest(token, itemKey);
-      setUser(prev => ({
-        ...prev,
-        coinsMbae: result.user.coins_mbae,
-        hearts: result.user.hearts,
-        equippedHat: result.user.equipped_hat,
-        equippedOutfit: result.user.equipped_outfit,
-        equippedTheme: result.user.equipped_theme,
-        inventory: prev.inventory.includes(itemKey) ? prev.inventory : [...prev.inventory, itemKey]
-      }));
-      setShopItems(prev => prev.map(i => i.key === itemKey ? {
-        ...i,
-        is_purchased: true,
-        is_equipped: result.user.equipped_hat === i.key || result.user.equipped_outfit === i.key || result.user.equipped_theme === i.key
-      } : i));
-      return { success: true, message: result.message };
-    } catch (e) {
-      return { success: false, message: e.message };
-    }
-  };
-
-  // Equipa un artículo que ya compró, y guarda el cambio en su perfil
-  const equipItem = async (category, itemKey) => {
-    const field = category === 'hat' ? 'equippedHat' : 'equippedOutfit';
-    const fallback = category === 'hat' ? 'ninguno' : 'tradicional';
-    const newValue = user[field] === itemKey ? fallback : itemKey;
-
-    setUser(prev => ({ ...prev, [field]: newValue }));
-    try {
-      await saveSettings(token, category === 'hat' ? { equipped_hat: newValue } : { equipped_outfit: newValue });
-    } catch (e) {
-      console.warn('No se pudo guardar el artículo equipado:', e.message);
-    }
-  };
-
-  // Marca un cuento como completado en Supabase y otorga su XP
   const completeStory = async (storyId) => {
     try {
       const result = await completeStoryRequest(token, storyId);
       if (result.user) {
         setUser(prev => ({ ...prev, xpTotal: result.user.xp_total }));
       }
-      setStories(prev => prev.map(s => s.id === storyId ? { ...s, is_completed: true } : s));
-      return result;
+      await loadAchievements();
     } catch (e) {
-      console.warn('No se pudo guardar el progreso del cuento:', e.message);
+      console.warn('Error completando el cuento:', e.message);
     }
   };
 
-  // Navigate helper
+  const translateText = async ({ text, sourceLang, targetLang, dialectVariant }) => {
+    const data = await translateRequest(token, {
+      text,
+      source_lang: sourceLang,
+      target_lang: targetLang,
+      dialect_variant: dialectVariant || user?.dialectVariant || 'ava'
+    });
+    setTranslationHistory(prev => [data.translation, ...prev]);
+    return data.translation;
+  };
+
+  const loadTranslationHistory = async () => {
+    try {
+      const history = await fetchTranslationHistory(token);
+      setTranslationHistory(history);
+    } catch (e) {
+      console.warn('No se pudo cargar el historial de traducciones:', e.message);
+    }
+  };
+
+  const toggleFavoriteTranslationItem = async (translationId) => {
+    try {
+      const result = await toggleFavoriteTranslation(token, translationId);
+      setTranslationHistory(prev =>
+        prev.map(t => (t.id === translationId ? { ...t, is_favorite: result.translation.is_favorite } : t))
+      );
+    } catch (e) {
+      console.warn('Error al marcar favorito:', e.message);
+    }
+  };
+
+  const buyShopItem = async (itemKey) => {
+    try {
+      const result = await purchaseItemRequest(token, itemKey);
+      await loadShop(token);
+      setUser(prev => ({
+        ...prev,
+        coinsMbae: result.new_balance,
+        equippedHat: result.user.equipped_hat,
+        equippedOutfit: result.user.equipped_outfit,
+        equippedTheme: result.user.equipped_theme,
+        hearts: result.user.hearts,
+        heartRegenAt: result.user.heart_regen_at || null
+      }));
+      return { success: true, message: result.message };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
+  };
+
+  const equipItem = async (category, itemKey) => {
+    const item = shopItems.find(i => i.key === itemKey);
+    if (!item) return;
+    await buyShopItem(itemKey);
+  };
+
   const navigateTo = async (screen, params = {}) => {
     if (params.lessonId) {
-      const allLessons = units.flatMap(u => u.lessons);
+      const allLessons = units.flatMap(u => u.lessons || []);
       const targetLesson = allLessons.find(l => l.id === params.lessonId) || allLessons[0];
       setActiveLesson(targetLesson);
       if (targetLesson) {
@@ -382,10 +442,14 @@ export const AppProvider = ({ children }) => {
         units,
         unitsLoading,
         stories,
-        storiesLoading,
         shopItems,
-        shopLoading,
         achievements,
+        completeStory,
+        translationHistory,
+        translateText,
+        loadTranslationHistory,
+        toggleFavoriteTranslationItem,
+        loadAchievements,
         activeLesson,
         setActiveLesson,
         activeExercises,
@@ -393,7 +457,7 @@ export const AppProvider = ({ children }) => {
         setActiveStory,
         lastLessonResult,
         completeLesson,
-        completeStory,
+        goToNextLesson,
         loseHeart,
         buyShopItem,
         equipItem,

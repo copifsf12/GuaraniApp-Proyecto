@@ -9,6 +9,7 @@ export default function BottomNavBar() {
 
   const tabs = [
     { key: 'learn', label: 'Aprender', icon: 'map', outlineIcon: 'map-outline' },
+    { key: 'translator', label: 'Traducir', icon: 'language', outlineIcon: 'language-outline' },
     { key: 'stories', label: 'Historias', icon: 'book', outlineIcon: 'book-outline' },
     { key: 'leagues', label: 'Ligas', icon: 'trophy', outlineIcon: 'trophy-outline' },
     { key: 'shop', label: 'Tienda', icon: 'cart', outlineIcon: 'cart-outline' },
@@ -81,7 +82,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.montePastel,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     marginTop: 2,
   },

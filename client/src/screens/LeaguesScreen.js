@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,34 +13,49 @@ import { useApp } from '../context/AppContext';
 import Header from '../components/Header';
 
 export default function LeaguesScreen() {
-  const { user } = useApp();
-
+  const { user, setCurrentScreen } = useApp();
   const [activeLeagueIndex, setActiveLeagueIndex] = useState(0);
 
   const leagues = [
-    { id: 1, name: 'Liga Semilla (Ra\'ỹi)', rank_req: 'Inicial', icon: 'leaf', color: colors.montePrimary },
-    { id: 2, name: 'Liga Vasija (Yapepó)', rank_req: 'Intermedio', icon: 'color-filter', color: colors.terracotaPrimary },
-    { id: 3, name: 'Liga del Mburuvicha', rank_req: 'Maestría', icon: 'trophy', color: colors.solGold }
+    { id: 1, shortName: 'Semilla', name: 'Liga Semilla (Ra\'ỹi)', icon: 'leaf', color: colors.montePrimary },
+    { id: 2, shortName: 'Vasija', name: 'Liga Vasija (Yapepó)', icon: 'color-filter', color: colors.terracotaPrimary },
+    { id: 3, shortName: 'Mburuvicha', name: 'Liga del Mburuvicha', icon: 'trophy', color: colors.solGold }
   ];
 
-  // 15 user leaderboard list
-  const leaderboardUsers = [
-    { rank: 1, name: 'Kuarahy (Sol Chaqueño)', xp: 420, isUser: false, avatar: 'paw' },
-    { rank: 2, name: 'Yasí (Luna del Oriente)', xp: 390, isUser: false, avatar: 'moon' },
-    { rank: 3, name: `${user.username} (Tú)`, xp: user.xpTotal, isUser: true, avatar: 'person' },
-    { rank: 4, name: 'Ñanderu (Caminante)', xp: 260, isUser: false, avatar: 'walk' },
-    { rank: 5, name: 'Izoceño Valiente', xp: 240, isUser: false, avatar: 'shield' },
-    { rank: 6, name: 'Ara (Tiempo Limpio)', xp: 210, isUser: false, avatar: 'sunny' },
-    { rank: 7, name: 'Mainumby (Picaflor)', xp: 195, isUser: false, avatar: 'flower' },
-    { rank: 8, name: 'Cordillera Verde', xp: 180, isUser: false, avatar: 'leaf' },
-    { rank: 9, name: 'Chaco Tarijeño', xp: 170, isUser: false, avatar: 'bonfire' },
-    { rank: 10, name: 'Parapetí Ñe\'ẽ', xp: 155, isUser: false, avatar: 'water' },
-    { rank: 11, name: 'Simba Resiliente', xp: 140, isUser: false, avatar: 'fitness' },
-    { rank: 12, name: 'Tatú Carreta', xp: 125, isUser: false, avatar: 'planet' },
-    { rank: 13, name: 'Guasu Mirĩ', xp: 90, isUser: false, avatar: 'footsteps' },
-    { rank: 14, name: 'Pirapó', xp: 60, isUser: false, avatar: 'fish' },
-    { rank: 15, name: 'Yvytu (Viento del Sur)', xp: 30, isUser: false, avatar: 'cloudy' }
+  // 🎯 Usuarios base (sin rank fijo)
+  const baseUsers = [
+    { name: 'Kuarahy (Sol Chaqueño)', xp: 420, isUser: false, avatar: 'paw' },
+    { name: 'Yasí (Luna del Oriente)', xp: 390, isUser: false, avatar: 'moon' },
+    { name: 'Ñanderu (Caminante)', xp: 260, isUser: false, avatar: 'walk' },
+    { name: 'Izoceño Valiente', xp: 240, isUser: false, avatar: 'shield' },
+    { name: 'Ara (Tiempo Limpio)', xp: 210, isUser: false, avatar: 'sunny' },
+    { name: 'Mainumby (Picaflor)', xp: 195, isUser: false, avatar: 'flower' },
+    { name: 'Cordillera Verde', xp: 180, isUser: false, avatar: 'leaf' },
+    { name: 'Chaco Tarijeño', xp: 170, isUser: false, avatar: 'bonfire' },
+    { name: 'Parapetí Ñe\'ẽ', xp: 155, isUser: false, avatar: 'water' },
+    { name: 'Simba Resiliente', xp: 140, isUser: false, avatar: 'fitness' },
+    { name: 'Tatú Carreta', xp: 125, isUser: false, avatar: 'planet' },
+    { name: 'Guasu Mirĩ', xp: 90, isUser: false, avatar: 'footsteps' },
+    { name: 'Pirapó', xp: 60, isUser: false, avatar: 'fish' },
+    { name: 'Yvytu (Viento del Sur)', xp: 30, isUser: false, avatar: 'cloudy' }
   ];
+
+  // 🎯 Combina usuarios base + usuario actual, ordena por XP descendente y asigna rank dinámico
+  const leaderboardUsers = useMemo(() => {
+    const withUser = [
+      ...baseUsers,
+      {
+        name: `${user?.username || 'Tú'} (Tú)`,
+        xp: user?.xpTotal || 0,
+        isUser: true,
+        avatar: 'person'
+      }
+    ];
+    // Ordenar por XP descendente
+    withUser.sort((a, b) => b.xp - a.xp);
+    // Asignar rank 1..n
+    return withUser.map((u, i) => ({ ...u, rank: i + 1 }));
+  }, [user?.xpTotal, user?.username]);
 
   const communityGoal = {
     title: 'Meta Colectiva del Mes',
@@ -52,9 +67,9 @@ export default function LeaguesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header />
+      <Header onHeartsPress={() => {}} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* League Selector Header */}
+        {/* League Selector */}
         <View style={styles.leagueBanner}>
           <View style={styles.leagueSelector}>
             {leagues.map((lg, idx) => {
@@ -64,14 +79,18 @@ export default function LeaguesScreen() {
                   key={lg.id}
                   style={[styles.leaguePill, isSelected && { backgroundColor: lg.color }]}
                   onPress={() => setActiveLeagueIndex(idx)}
+                  activeOpacity={0.7}
                 >
                   <Ionicons
                     name={lg.icon}
                     size={16}
                     color={isSelected ? '#FFFFFF' : colors.textSecondary}
                   />
-                  <Text style={[styles.leaguePillText, isSelected && styles.leaguePillTextActive]}>
-                    {lg.name.split(' ')[1]}
+                  <Text
+                    style={[styles.leaguePillText, isSelected && styles.leaguePillTextActive]}
+                    numberOfLines={1}
+                  >
+                    {lg.shortName}
                   </Text>
                 </TouchableOpacity>
               );
@@ -93,7 +112,7 @@ export default function LeaguesScreen() {
           </View>
         </View>
 
-        {/* Global Community Challenge Banner */}
+        {/* Community Challenge */}
         <View style={styles.challengeCard}>
           <View style={styles.challengeHeader}>
             <Ionicons name="people" size={22} color={colors.aretePurple} />
@@ -102,7 +121,6 @@ export default function LeaguesScreen() {
           <Text style={styles.challengeTitle}>{communityGoal.title}</Text>
           <Text style={styles.challengeDesc}>{communityGoal.desc}</Text>
 
-          {/* Progress Bar */}
           <View style={styles.challengeProgressBg}>
             <View style={[styles.challengeProgressFill, { width: `${communityGoal.percent}%` }]} />
           </View>
@@ -112,7 +130,7 @@ export default function LeaguesScreen() {
           </View>
         </View>
 
-        {/* Promotion / Demotion Zone Legend */}
+        {/* Legend */}
         <View style={styles.legendRow}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: colors.successGreen }]} />
@@ -124,7 +142,7 @@ export default function LeaguesScreen() {
           </View>
         </View>
 
-        {/* Leaderboard Table */}
+        {/* Leaderboard */}
         <View style={styles.leaderboardBox}>
           {leaderboardUsers.map((item, index) => {
             const isPromotion = index < 5;
@@ -140,7 +158,6 @@ export default function LeaguesScreen() {
                   isDemotion && styles.demotionBorder,
                 ]}
               >
-                {/* Rank Number */}
                 <View style={styles.rankBadge}>
                   <Text
                     style={[
@@ -154,7 +171,6 @@ export default function LeaguesScreen() {
                   </Text>
                 </View>
 
-                {/* Avatar Icon */}
                 <View
                   style={[
                     styles.avatarCircle,
@@ -168,18 +184,13 @@ export default function LeaguesScreen() {
                   />
                 </View>
 
-                {/* Name */}
                 <Text
-                  style={[
-                    styles.userName,
-                    item.isUser && styles.userNameActive,
-                  ]}
+                  style={[styles.userName, item.isUser && styles.userNameActive]}
                   numberOfLines={1}
                 >
                   {item.name}
                 </Text>
 
-                {/* Promotion / Demotion Indicator Arrow */}
                 {isPromotion && (
                   <Ionicons name="chevron-up" size={18} color={colors.successGreen} style={{ marginRight: 6 }} />
                 )}
@@ -187,7 +198,6 @@ export default function LeaguesScreen() {
                   <Ionicons name="chevron-down" size={18} color={colors.errorRed} style={{ marginRight: 6 }} />
                 )}
 
-                {/* XP Score */}
                 <View style={styles.scorePill}>
                   <Text style={styles.scoreText}>{item.xp} XP</Text>
                 </View>
@@ -201,14 +211,8 @@ export default function LeaguesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.sandBackground,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: colors.sandBackground },
+  scrollContent: { padding: 20, paddingBottom: 40 },
   leagueBanner: {
     backgroundColor: '#FFFFFF',
     borderRadius: 22,
@@ -230,11 +234,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.sandBackground,
     paddingVertical: 8,
+    paddingHorizontal: 4,
     borderRadius: 14,
     gap: 4,
   },
   leaguePillText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: colors.textSecondary,
   },
@@ -257,16 +262,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  leagueTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: colors.monteDark,
-  },
-  leagueTime: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
+  leagueTitle: { fontSize: 17, fontWeight: '800', color: colors.monteDark },
+  leagueTime: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   challengeCard: {
     backgroundColor: colors.aretePastel,
     borderRadius: 20,
@@ -287,17 +284,8 @@ const styles = StyleSheet.create({
     color: colors.aretePurple,
     letterSpacing: 1,
   },
-  challengeTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  challengeDesc: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 16,
-  },
+  challengeTitle: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
+  challengeDesc: { fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 16 },
   challengeProgressBg: {
     height: 10,
     backgroundColor: 'rgba(255,255,255,0.8)',
@@ -305,57 +293,29 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 10,
   },
-  challengeProgressFill: {
-    height: '100%',
-    backgroundColor: colors.aretePurple,
-    borderRadius: 5,
-  },
+  challengeProgressFill: { height: '100%', backgroundColor: colors.aretePurple, borderRadius: 5 },
   challengeNumbers: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 4,
   },
-  challengeCount: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.aretePurple,
-  },
-  challengeGoal: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
+  challengeCount: { fontSize: 12, fontWeight: '800', color: colors.aretePurple },
+  challengeGoal: { fontSize: 12, color: colors.textMuted },
   legendRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 12,
     paddingHorizontal: 4,
   },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary },
   leaderboardBox: {
     backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 10,
     borderWidth: 2,
     borderColor: colors.sandBorder,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 3,
   },
   userRow: {
     flexDirection: 'row',
@@ -371,23 +331,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.solGold,
   },
-  promotionBorder: {
-    borderLeftWidth: 4,
-    borderLeftColor: colors.successGreen,
-  },
-  demotionBorder: {
-    borderLeftWidth: 4,
-    borderLeftColor: colors.errorRed,
-  },
-  rankBadge: {
-    width: 28,
-    alignItems: 'center',
-  },
-  rankText: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: colors.textSecondary,
-  },
+  promotionBorder: { borderLeftWidth: 4, borderLeftColor: colors.successGreen },
+  demotionBorder: { borderLeftWidth: 4, borderLeftColor: colors.errorRed },
+  rankBadge: { width: 28, alignItems: 'center' },
+  rankText: { fontSize: 16, fontWeight: '900', color: colors.textSecondary },
   avatarCircle: {
     width: 36,
     height: 36,
@@ -398,25 +345,13 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     marginRight: 10,
   },
-  userName: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  userNameActive: {
-    color: colors.terracotaDark,
-    fontWeight: '900',
-  },
+  userName: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  userNameActive: { color: colors.terracotaDark, fontWeight: '900' },
   scorePill: {
     backgroundColor: colors.sandBackground,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
   },
-  scoreText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.monteDark,
-  },
+  scoreText: { fontSize: 13, fontWeight: '800', color: colors.monteDark },
 });

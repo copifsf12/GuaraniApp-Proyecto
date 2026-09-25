@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { colors } from './src/theme/colors';
@@ -10,11 +11,14 @@ import OnboardingScreen from './src/screens/OnboardingScreen';
 import AuthScreen from './src/screens/AuthScreen';
 import PathScreen from './src/screens/PathScreen';
 import LessonScreen from './src/screens/LessonScreen';
+import LessonTutorialScreen from './src/screens/LessonTutorialScreen';
 import LessonCompleteScreen from './src/screens/LessonCompleteScreen';
 import StoriesScreen from './src/screens/StoriesScreen';
+import TranslatorScreen from './src/screens/TranslatorScreen';
 import LeaguesScreen from './src/screens/LeaguesScreen';
 import ShopScreen from './src/screens/ShopScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import WelcomeScreen from './src/screens/WelcomeScreen';
 
 // Components
 import BottomNavBar from './src/components/BottomNavBar';
@@ -37,7 +41,17 @@ function MainNavigator() {
     return <AuthScreen />;
   }
 
-  // 4. Lesson Interactive Engine
+  // Pantalla de bienvenida
+  if (currentScreen === 'welcome') {
+    return <WelcomeScreen />;
+  }
+
+  // 4. Mini-clase / tutorial antes de la lección
+  if (currentScreen === 'lesson_tutorial') {
+    return <LessonTutorialScreen />;
+  }
+
+  // 5. Lesson Interactive Engine
   if (currentScreen === 'lesson') {
     return <LessonScreen />;
   }
@@ -49,9 +63,10 @@ function MainNavigator() {
 
   // 6. Main Hub (Tab Bar View)
   return (
-    <SafeAreaView style={styles.mainContainer}>
+    <SafeAreaView style={styles.mainContainer} edges={['top']}>
       <View style={styles.tabContent}>
         {activeTab === 'learn' && <PathScreen />}
+        {activeTab === 'translator' && <TranslatorScreen />}
         {activeTab === 'stories' && <StoriesScreen />}
         {activeTab === 'leagues' && <LeaguesScreen />}
         {activeTab === 'shop' && <ShopScreen />}
@@ -64,10 +79,12 @@ function MainNavigator() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <StatusBar style="dark" backgroundColor={colors.sandBackground} />
-      <MainNavigator />
-    </AppProvider>
+    <SafeAreaProvider>
+      <AppProvider>
+        <StatusBar style="dark" backgroundColor={colors.sandBackground} />
+        <MainNavigator />
+      </AppProvider>
+    </SafeAreaProvider>
   );
 }
 

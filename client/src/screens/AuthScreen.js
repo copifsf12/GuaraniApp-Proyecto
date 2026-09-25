@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 import MascotAguara from '../components/MascotAguara';
+import PressableScale from '../components/PressableScale';
 
 export default function AuthScreen() {
   const { setCurrentScreen, login, register, authLoading, onboardingDraft } = useApp();
@@ -35,7 +36,7 @@ export default function AuthScreen() {
     try {
       if (isLogin) {
         await login({ email: email.trim(), password });
-        // AppContext navega a 'main' automáticamente si el login fue exitoso
+        // AppContext navega a 'welcome' automáticamente si el login fue exitoso
       } else {
         const data = await register({
           email: email.trim(),
@@ -45,11 +46,19 @@ export default function AuthScreen() {
           age_group: onboardingDraft.ageGroup,
           daily_goal_minutes: onboardingDraft.dailyGoalMinutes
         });
-        if (!data.session) {
-          // El proyecto de Supabase exige confirmar el correo antes de iniciar sesión
-          setInfoMessage(data.message);
-          setIsLogin(true);
-        }
+
+        // Limpiar los campos del formulario
+        setUsername('');
+        setEmail('');
+        setPassword('');
+
+        // Mostrar mensaje de éxito
+        setInfoMessage(
+          data.message || "✅ Cuenta creada exitosamente. Ahora inicia sesión con tu correo y contraseña."
+        );
+
+        // Cambiar automáticamente a la pestaña de iniciar sesión
+        setIsLogin(true);
       }
     } catch (e) {
       setFormError(e.message);
@@ -149,11 +158,11 @@ export default function AuthScreen() {
           {infoMessage && <Text style={styles.infoText}>{infoMessage}</Text>}
 
           {/* Submit Button */}
-          <TouchableOpacity
+          <PressableScale
             style={[styles.submitButton, authLoading && { opacity: 0.7 }]}
             onPress={handleSubmit}
-            activeOpacity={0.85}
             disabled={authLoading}
+            pulse={!authLoading}
           >
             {authLoading ? (
               <ActivityIndicator color="#FFFFFF" />
@@ -162,7 +171,7 @@ export default function AuthScreen() {
                 {isLogin ? 'Ingresar a mi cuenta' : 'Registrarme y Empezar'}
               </Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -260,6 +269,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderBottomWidth: 4,
     borderBottomColor: colors.terracotaDark,
+    shadowColor: colors.terracotaDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
   },
   submitButtonText: {
     color: '#FFFFFF',
@@ -279,44 +293,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 10,
     textAlign: 'center',
-  },
-  orDivider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 18,
-  },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.sandBorder,
-  },
-  orText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.textMuted,
-    marginHorizontal: 12,
-    letterSpacing: 1,
-  },
-  guestButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.montePastel,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.monteMedium,
-    gap: 8,
-  },
-  guestButtonText: {
-    color: colors.monteDark,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  guestHint: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: 8,
   },
 });

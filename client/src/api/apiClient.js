@@ -15,7 +15,8 @@ async function saveSession(session) {
 
 async function loadSession() {
   const raw = await AsyncStorage.getItem(SESSION_KEY);
-  return raw ? JSON.parse(raw) : null;
+  // CORRECCIÓN: Evita el colapso si la memoria guardó la palabra "undefined" por error
+  return (raw && raw !== "undefined") ? JSON.parse(raw) : null;
 }
 
 async function clearSession() {
@@ -92,7 +93,32 @@ export async function fetchUnits(token) {
 
 export async function fetchLessonExercises(token, lessonId) {
   const data = await request(`/lessons/${lessonId}/exercises`, { token });
-  return data;
+
+  // Normaliza los nombres de campo de Supabase a los que ya usan las pantallas
+  // (type, audio_text, chips, special_keys), igual que hicimos con units/lessons.
+  const exercises = (data.exercises || []).map(ex => {
+    const base = {
+      id: ex.id,
+      type: ex.exercise_type,
+      prompt_spanish: ex.prompt_spanish,
+      prompt_guarani: ex.prompt_guarani,
+      audio_text: ex.audio_sample_text,
+      correct_answer: ex.correct_answer,
+      explanation: ex.explanation,
+      cultural_fact: ex.cultural_fact
+    };
+
+    if (ex.exercise_type === 'sentence_builder') {
+      return { ...base, chips: ex.options || [] };
+    }
+    if (ex.exercise_type === 'special_keyboard') {
+      return { ...base, special_keys: ex.options || [] };
+    }
+    // card_selection, nasal_discrimination, audio_listening
+    return { ...base, options: ex.options || [] };
+  });
+
+  return { lesson: data.lesson, exercises };
 }
 
 export async function completeLessonRequest(token, lessonId, { accuracy, time_spent_seconds }) {
@@ -103,16 +129,12 @@ export async function completeLessonRequest(token, lessonId, { accuracy, time_sp
   });
 }
 
-// ---- Cuentos (Stories) ----
-// Normaliza los campos de Supabase (title_guarani, dialect_variant, xp_reward,
-// dialogues[].text_guarani...) a la forma que ya usaba StoriesScreen.js
-// (dialect, difficulty, xp, dialogues[].guarani/spanish), para no reescribir la pantalla.
+// ---- Cuentos (Kassukuaa Stories) ----
 export async function fetchStories(token) {
   const data = await request('/stories', { token });
+  // Normaliza a la forma que ya usaba StoriesScreen (LOCAL_STORIES)
   return data.stories.map(story => ({
     ...story,
-    dialect: story.dialect_variant,
-    difficulty: story.difficulty_level,
     xp: story.xp_reward,
     dialogues: (story.dialogues || []).map(line => ({
       ...line,
@@ -127,29 +149,38 @@ export async function completeStoryRequest(token, storyId) {
 }
 
 // ---- Tienda ----
-const SHOP_TAGS = {
-  hat: 'Accesorio Típico',
-  costume: 'Ropa Típica',
-  powerup: 'Potenciador',
-  theme: 'Personalización'
-};
-
-// Normaliza item_key -> key, price_mbae -> price (forma que ya usaba ShopScreen.js)
 export async function fetchShop(token) {
   const data = await request('/shop', { token });
   return {
     items: data.items.map(item => ({
       ...item,
       key: item.item_key,
-      price: item.price_mbae,
-      tag: SHOP_TAGS[item.category] || ''
+      price: item.price_mbae
     })),
     balance: data.user_balance
   };
 }
 
-export async function purchaseShopItemRequest(token, itemKey) {
+export async function purchaseItemRequest(token, itemKey) {
   return request('/shop/purchase', { method: 'POST', body: { item_key: itemKey }, token });
+}
+
+// ---- Traductor con IA ----
+export async function translateRequest(token, { text, source_lang, target_lang, dialect_variant }) {
+  return request('/translate', {
+    method: 'POST',
+    body: { text, source_lang, target_lang, dialect_variant },
+    token
+  });
+}
+
+export async function fetchTranslationHistory(token) {
+  const data = await request('/translations/history', { token });
+  return data.translations;
+}
+
+export async function toggleFavoriteTranslation(token, translationId) {
+  return request(`/translations/${translationId}/favorite`, { method: 'POST', token });
 }
 
 export const sessionStorage = { saveSession, loadSession, clearSession };

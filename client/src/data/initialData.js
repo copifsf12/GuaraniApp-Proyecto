@@ -133,6 +133,76 @@ export const LOCAL_UNITS = [
           title: 'La Astucia de Aguará',
           content: 'El zorro chaqueño es el héroe astuto de las fábulas indígenas, venciendo a oponentes más grandes con ingenio.'
         }
+      },
+      {
+        id: 7,
+        title: 'Juego: Empareja los Animales',
+        type: 'game',
+        xp: 20,
+        coins: 15,
+        is_completed: false,
+        cultural_capsule: {
+          title: 'El Guasu, Señor del Monte',
+          content: 'El venado (Guasu) simboliza la libertad y el cuidado del territorio en los relatos guaraníes.'
+        }
+      },
+      {
+        id: 8,
+        title: 'Más Animales del Chaco',
+        type: 'normal',
+        xp: 15,
+        coins: 10,
+        is_completed: false,
+        cultural_capsule: {
+          title: 'El Tatú y su Coraza',
+          content: 'El armadillo (Tatú) es admirado por su paciencia y su resistencia bajo tierra.'
+        }
+      }
+    ]
+  },
+  {
+    id: 3,
+    unit_number: 3,
+    title_guarani: "Ñemoñare ha Papapy",
+    title_spanish: 'Familia y Números',
+    description: 'Aprende a nombrar a tu familia y a contar del uno al diez en Guaraní.',
+    theme_color: '#8E24AA',
+    lessons: [
+      {
+        id: 9,
+        title: 'Miembros de la Familia',
+        type: 'normal',
+        xp: 15,
+        coins: 10,
+        is_completed: false,
+        cultural_capsule: {
+          title: 'La Familia Extensa Guaraní',
+          content: 'En las comunidades guaraníes, "familia" incluye abuelos, tíos y toda la Tëta (casa comunal).'
+        }
+      },
+      {
+        id: 10,
+        title: 'Juego: Memoria de Números',
+        type: 'game',
+        xp: 20,
+        coins: 15,
+        is_completed: false,
+        cultural_capsule: {
+          title: 'Contar como los Abuelos',
+          content: 'Los números guaraníes acompañan cantos y juegos tradicionales transmitidos de generación en generación.'
+        }
+      },
+      {
+        id: 11,
+        title: 'Prueba de la Casa Comunal (Tëta)',
+        type: 'checkpoint_teta',
+        xp: 40,
+        coins: 35,
+        is_completed: false,
+        cultural_capsule: {
+          title: 'Sabiduría de los Mayores',
+          content: 'Dominar familia y números es el segundo paso reconocido por el consejo de la comunidad.'
+        }
       }
     ]
   }
@@ -224,6 +294,135 @@ export const LOCAL_EXERCISES = {
       ],
       explanation: 'Kaaruma se utiliza desde las doce del mediodía hasta el anochecer.',
       cultural_fact: 'El descanso de la tarde en el Chaco es el momento de compartir el mate y la chicha de maíz.'
+    }
+  ],
+  7: [
+    {
+      id: 701,
+      type: 'matching_pairs',
+      prompt_spanish: 'Empareja cada animal con su nombre en Guaraní',
+      prompt_guarani: 'Eñono ojoykére mymba reta',
+      pairs: [
+        { id: 'p1', left: 'Zorro', right: 'Aguará' },
+        { id: 'p2', left: 'Jaguar', right: 'Yagua' },
+        { id: 'p3', left: 'Armadillo', right: 'Tatú' },
+        { id: 'p4', left: 'Venado', right: 'Guasu' }
+      ],
+      explanation: '¡Excelente memoria! Aguará, Yagua, Tatú y Guasu son los animales protagonistas del monte chaqueño.',
+      cultural_fact: 'Cada uno de estos animales aparece en fábulas guaraníes que enseñan valores como la astucia y la paciencia.'
+    }
+  ],
+  8: [
+    {
+      id: 801,
+      type: 'card_selection',
+      prompt_spanish: '¿Cómo se dice "Armadillo" en Guaraní?',
+      prompt_guarani: '¿Mba\'eicha oñe\'ẽ "Armadillo"?',
+      audio_text: 'Tatú',
+      correct_answer: 'Tatú',
+      options: [
+        { id: '1', text: 'Tatú', translation: 'Armadillo', icon: 'shield-outline', isCorrect: true },
+        { id: '2', text: 'Guasu', translation: 'Venado', icon: 'walk-outline', isCorrect: false },
+        { id: '3', text: 'Aguará', translation: 'Zorro', icon: 'paw-outline', isCorrect: false },
+        { id: '4', text: 'Yagua', translation: 'Jaguar', icon: 'paw-outline', isCorrect: false }
+      ],
+      explanation: 'Tatú es el armadillo, conocido por su caparazón protector.',
+      cultural_fact: 'El Tatú excava madrigueras profundas y es símbolo de resistencia en las leyendas del Chaco.'
+    },
+    {
+      id: 802,
+      type: 'card_selection',
+      prompt_spanish: '¿Cómo se dice "Venado" en Guaraní?',
+      prompt_guarani: '¿Mba\'eicha oñe\'ẽ "Venado"?',
+      audio_text: 'Guasu',
+      correct_answer: 'Guasu',
+      options: [
+        { id: '1', text: 'Guasu', translation: 'Venado', icon: 'walk-outline', isCorrect: true },
+        { id: '2', text: 'Tatú', translation: 'Armadillo', icon: 'shield-outline', isCorrect: false },
+        { id: '3', text: 'Yagua', translation: 'Jaguar', icon: 'paw-outline', isCorrect: false },
+        { id: '4', text: 'Aguará', translation: 'Zorro', icon: 'paw-outline', isCorrect: false }
+      ],
+      explanation: 'Guasu es el venado, símbolo de libertad en el monte chaqueño.',
+      cultural_fact: 'El Guasu es respetado como guardián silencioso de los caminos del monte.'
+    }
+  ],
+  9: [
+    {
+      id: 901,
+      type: 'card_selection',
+      prompt_spanish: '¿Cómo se dice "Madre" en Guaraní?',
+      prompt_guarani: '¿Mba\'eicha oñe\'ẽ "Madre"?',
+      audio_text: 'Sy',
+      correct_answer: 'Sy',
+      options: [
+        { id: '1', text: 'Sy', translation: 'Madre', icon: 'woman-outline', isCorrect: true },
+        { id: '2', text: 'Túa', translation: 'Padre', icon: 'man-outline', isCorrect: false },
+        { id: '3', text: 'Che ryke\'y', translation: 'Mi hermano mayor', icon: 'people-outline', isCorrect: false },
+        { id: '4', text: 'Abuelo', translation: 'Angu', icon: 'person-outline', isCorrect: false }
+      ],
+      explanation: 'Sy significa "madre" en Guaraní Oriental Boliviano.',
+      cultural_fact: 'La madre (Sy) es la base espiritual y organizativa de la familia extensa guaraní.'
+    },
+    {
+      id: 902,
+      type: 'card_selection',
+      prompt_spanish: '¿Cómo se dice "Padre" en Guaraní?',
+      prompt_guarani: '¿Mba\'eicha oñe\'ẽ "Padre"?',
+      audio_text: 'Túa',
+      correct_answer: 'Túa',
+      options: [
+        { id: '1', text: 'Túa', translation: 'Padre', icon: 'man-outline', isCorrect: true },
+        { id: '2', text: 'Sy', translation: 'Madre', icon: 'woman-outline', isCorrect: false },
+        { id: '3', text: 'Angu', translation: 'Abuelo', icon: 'person-outline', isCorrect: false },
+        { id: '4', text: 'Tëta', translation: 'Casa comunal', icon: 'home-outline', isCorrect: false }
+      ],
+      explanation: 'Túa significa "padre" en Guaraní Oriental Boliviano.',
+      cultural_fact: 'El padre (Túa) suele enseñar los saberes de la caza y el cultivo a sus hijos.'
+    },
+    {
+      id: 903,
+      type: 'special_keyboard',
+      prompt_spanish: 'Escribe en guaraní: "Abuelo"',
+      prompt_guarani: 'Ehai "Abuelo" guaraníme',
+      audio_text: 'Angu',
+      correct_answer: 'Angu',
+      special_keys: ['ã', 'ẽ', 'ĩ', 'õ', 'ũ', 'ỹ', 'ñ', "'"],
+      explanation: 'La palabra se escribe "Angu".',
+      cultural_fact: 'Los abuelos (Angu) son los guardianes de la memoria oral guaraní.'
+    }
+  ],
+  10: [
+    {
+      id: 1001,
+      type: 'matching_pairs',
+      prompt_spanish: 'Empareja cada número con su nombre en Guaraní',
+      prompt_guarani: 'Eñono ojoykére papapy reta',
+      pairs: [
+        { id: 'q1', left: 'Uno', right: 'Peteĩ' },
+        { id: 'q2', left: 'Dos', right: 'Mokõi' },
+        { id: 'q3', left: 'Tres', right: 'Mbohapy' },
+        { id: 'q4', left: 'Cuatro', right: 'Irundy' }
+      ],
+      explanation: '¡Muy bien! Peteĩ, Mokõi, Mbohapy e Irundy son los primeros cuatro números guaraníes.',
+      cultural_fact: 'Los números guaraníes se usan en juegos infantiles y rondas cantadas de la comunidad.'
+    }
+  ],
+  11: [
+    {
+      id: 1101,
+      type: 'card_selection',
+      prompt_spanish: '¿Cómo se dice "Cinco" en Guaraní?',
+      prompt_guarani: '¿Mba\'eicha oñe\'ẽ "Cinco"?',
+      audio_text: 'Po',
+      correct_answer: 'Po',
+      options: [
+        { id: '1', text: 'Po', translation: 'Cinco', icon: 'hand-left-outline', isCorrect: true },
+        { id: '2', text: 'Irundy', translation: 'Cuatro', icon: 'apps-outline', isCorrect: false },
+        { id: '3', text: 'Mbohapy', translation: 'Tres', icon: 'apps-outline', isCorrect: false },
+        { id: '4', text: 'Sy', translation: 'Madre', icon: 'woman-outline', isCorrect: false }
+      ],
+      explanation: 'Po significa "cinco", relacionado con los dedos de la mano.',
+      cultural_fact: 'Muchas lenguas indígenas cuentan usando referencias al cuerpo, como los dedos de la mano.'
     }
   ]
 };

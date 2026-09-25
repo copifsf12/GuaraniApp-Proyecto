@@ -1,9 +1,23 @@
-import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 
 export default function CulturalCapsuleModal({ visible, title, content, onClose }) {
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      scaleAnim.setValue(0.8);
+      opacityAnim.setValue(0);
+      Animated.parallel([
+        Animated.spring(scaleAnim, { toValue: 1, friction: 6, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [visible]);
+
   if (!visible) return null;
 
   return (
@@ -14,10 +28,21 @@ export default function CulturalCapsuleModal({ visible, title, content, onClose 
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.cardContainer}>
-          {/* Header with traditional icon */}
-          <View style={styles.iconCircle}>
-            <Ionicons name="sparkles" size={32} color="#FFFFFF" />
+        <Animated.View
+          style={[
+            styles.cardContainer,
+            { transform: [{ scale: scaleAnim }], opacity: opacityAnim },
+          ]}
+        >
+          {/* Header with mascot image + icon badge */}
+          <View style={styles.headerArt}>
+            <Image
+              source={require('../../assets/images/aguara_celebrating.jpg')}
+              style={styles.headerImage}
+            />
+            <View style={styles.iconCircle}>
+              <Ionicons name="sparkles" size={30} color="#FFFFFF" />
+            </View>
           </View>
 
           <Text style={styles.subtitle}>🌿 CÁPSULA CULTURAL CHAQUEÑA</Text>
@@ -39,7 +64,7 @@ export default function CulturalCapsuleModal({ visible, title, content, onClose 
           >
             <Text style={styles.closeButtonText}>¡Comprendido! Continuar</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -68,29 +93,45 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 10,
   },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.terracotaPrimary,
-    justifyContent: 'center',
+  headerArt: {
+    width: '100%',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
+  },
+  headerImage: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     borderWidth: 3,
     borderColor: colors.solGold,
   },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.terracotaPrimary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: -6,
+    right: '32%',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
   subtitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
     color: colors.terracotaDark,
+    marginTop: 6,
     marginBottom: 4,
   },
   title: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     color: colors.textPrimary,
     textAlign: 'center',
+    lineHeight: 27,
     marginBottom: 12,
   },
   divider: {
@@ -112,8 +153,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   contentText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '500',
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 20,

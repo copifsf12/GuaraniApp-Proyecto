@@ -17,6 +17,7 @@ import SpecialKeyboard from '../components/SpecialKeyboard';
 import CulturalCapsuleModal from '../components/CulturalCapsuleModal';
 import { LessonScoreTracker } from '../utils/scoringEngine';
 import { LOCAL_EXERCISES } from '../data/initialData';
+import PressableScale from '../components/PressableScale';
 
 // Strict State Machine
 const LESSON_STATE = {
@@ -29,6 +30,7 @@ const LESSON_STATE = {
 export default function LessonScreen() {
   const {
     activeLesson,
+    activeExercises,
     user,
     loseHeart,
     completeLesson,
@@ -37,7 +39,11 @@ export default function LessonScreen() {
   } = useApp();
 
   const lessonId = activeLesson?.id || 1;
-  const exercises = LOCAL_EXERCISES[lessonId] || LOCAL_EXERCISES[1];
+  // Usa los ejercicios reales de Supabase; si una lección todavía no tiene
+  // contenido cargado ahí, cae de vuelta al set local de muestra.
+  const exercises = (activeExercises && activeExercises.length > 0)
+    ? activeExercises
+    : (LOCAL_EXERCISES[lessonId] || LOCAL_EXERCISES[1]);
 
   // Scoring engine instance (persistent across renders)
   const trackerRef = useRef(null);
@@ -58,6 +64,36 @@ export default function LessonScreen() {
   );
   const [typedText, setTypedText] = useState('');
   const [selectedNasalOption, setSelectedNasalOption] = useState(null);
+
+  // Matching pairs game state
+  const buildMatchDeck = (ex) => {
+    if (!ex || ex.type !== 'matching_pairs') return [];
+    const left = ex.pairs.map(p => ({ cardId: `L-${p.id}`, pairId: p.id, text: p.left }));
+    const right = ex.pairs.map(p => ({ cardId: `R-${p.id}`, pairId: p.id, text: p.right }));
+    return [...left, ...right].sort(() => Math.random() - 0.5);
+  };
+  const [matchDeck, setMatchDeck] = useState(buildMatchDeck(currentExercise));
+  const [matchSelected, setMatchSelected] = useState(null);
+  const [matchedPairIds, setMatchedPairIds] = useState([]);
+  const [matchWrongFlash, setMatchWrongFlash] = useState([]);
+
+  const handleMatchCardPress = (card) => {
+    if (lessonState !== LESSON_STATE.IN_PROGRESS) return;
+    if (matchedPairIds.includes(card.pairId)) return;
+    if (!matchSelected) {
+      setMatchSelected(card);
+      return;
+    }
+    if (matchSelected.cardId === card.cardId) return;
+    if (matchSelected.pairId === card.pairId) {
+      setMatchedPairIds(prev => [...prev, card.pairId]);
+      setMatchSelected(null);
+    } else {
+      setMatchWrongFlash([matchSelected.cardId, card.cardId]);
+      setTimeout(() => setMatchWrongFlash([]), 400);
+      setMatchSelected(null);
+    }
+  };
 
   // Modals & UI animations
   const [showExitModal, setShowExitModal] = useState(false);
@@ -98,6 +134,9 @@ export default function LessonScreen() {
     if (currentExercise.type === 'special_keyboard' || currentExercise.type === 'audio_listening') {
       return typedText.trim().length > 0;
     }
+    if (currentExercise.type === 'matching_pairs') {
+      return matchedPairIds.length === currentExercise.pairs.length;
+    }
     return false;
   };
 
@@ -118,6 +157,8 @@ export default function LessonScreen() {
       isCorrect = opt?.isCorrect || false;
     } else if (currentExercise.type === 'special_keyboard' || currentExercise.type === 'audio_listening') {
       isCorrect = typedText.toLowerCase().trim() === currentExercise.correct_answer.toLowerCase().trim();
+    } else if (currentExercise.type === 'matching_pairs') {
+      isCorrect = matchedPairIds.length === currentExercise.pairs.length;
     }
 
     // Record strict attempt in tracker
@@ -144,11 +185,16 @@ export default function LessonScreen() {
     setSelectedTokens([]);
     setTypedText('');
     setSelectedNasalOption(null);
+    setMatchSelected(null);
+    setMatchedPairIds([]);
 
     if (currentIndex + 1 < exercises.length) {
       const nextEx = exercises[currentIndex + 1];
       if (nextEx.type === 'sentence_builder') {
         setAvailableTokens(nextEx.chips);
+      }
+      if (nextEx.type === 'matching_pairs') {
+        setMatchDeck(buildMatchDeck(nextEx));
       }
       setCurrentIndex(currentIndex + 1);
     } else {
@@ -349,6 +395,35 @@ export default function LessonScreen() {
             <SpecialKeyboard onCharacterPress={handleSpecialKey} />
           </View>
         )}
+
+        {/* 6. MATCHING PAIRS GAME (Memoria) */}
+        {currentExercise.type === 'matching_pairs' && (
+          <View style={styles.matchGrid}>
+            {matchDeck.map(card => {
+              const isMatched = matchedPairIds.includes(card.pairId);
+              const isSelected = matchSelected?.cardId === card.cardId;
+              const isWrong = matchWrongFlash.includes(card.cardId);
+              return (
+                <TouchableOpacity
+                  key={card.cardId}
+                  style={[
+                    styles.matchCard,
+                    isSelected && styles.matchCardSelected,
+                    isMatched && styles.matchCardMatched,
+                    isWrong && styles.matchCardWrong,
+                  ]}
+                  onPress={() => handleMatchCardPress(card)}
+                  activeOpacity={0.8}
+                  disabled={isMatched}
+                >
+                  <Text style={[styles.matchCardText, isMatched && styles.matchCardTextMatched]}>
+                    {card.text}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
 
       {/* BOTTOM ACTION & FEEDBACK SLIDE-UP SHEET */}
@@ -360,17 +435,17 @@ export default function LessonScreen() {
         ]}
       >
         {lessonState === LESSON_STATE.IN_PROGRESS ? (
-          <TouchableOpacity
+          <PressableScale
             style={[
               styles.checkButton,
               isAnswerProvided() ? styles.checkButtonActive : styles.checkButtonDisabled
             ]}
             onPress={handleCheckAnswer}
             disabled={!isAnswerProvided()}
-            activeOpacity={0.85}
+            pulse={isAnswerProvided()}
           >
             <Text style={styles.checkButtonText}>COMPROBAR RESPUESTA</Text>
-          </TouchableOpacity>
+          </PressableScale>
         ) : lessonState === LESSON_STATE.FEEDBACK_CORRECT ? (
           <View>
             <View style={styles.feedbackHeader}>
@@ -380,13 +455,13 @@ export default function LessonScreen() {
                 <Text style={styles.feedbackDesc}>{currentExercise.explanation}</Text>
               </View>
             </View>
-            <TouchableOpacity
-              style={[styles.continueButton, { backgroundColor: colors.successGreen }]}
+            <PressableScale
+              style={[styles.continueButton, { backgroundColor: colors.successGreen, borderBottomColor: colors.successGreenDark }]}
               onPress={handleContinue}
-              activeOpacity={0.85}
+              pulse
             >
               <Text style={styles.continueButtonText}>CONTINUAR</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         ) : (
           <View>
@@ -398,13 +473,13 @@ export default function LessonScreen() {
                 <Text style={styles.feedbackDesc}>{currentExercise.explanation}</Text>
               </View>
             </View>
-            <TouchableOpacity
-              style={[styles.continueButton, { backgroundColor: colors.errorRed }]}
+            <PressableScale
+              style={[styles.continueButton, { backgroundColor: colors.errorRed, borderBottomColor: colors.errorRedDark }]}
               onPress={handleContinue}
-              activeOpacity={0.85}
+              pulse
             >
               <Text style={styles.continueButtonText}>ENTENDIDO</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         )}
       </View>
@@ -476,17 +551,60 @@ const styles = StyleSheet.create({
     paddingBottom: 130,
   },
   promptSpanish: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
     color: colors.textPrimary,
+    lineHeight: 30,
     marginBottom: 4,
   },
   promptGuarani: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     color: colors.montePrimary,
     fontStyle: 'italic',
+    lineHeight: 23,
     marginBottom: 16,
+  },
+  matchGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  matchCard: {
+    width: '48%',
+    minHeight: 64,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderColor: colors.sandBorder,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+  },
+  matchCardSelected: {
+    borderColor: colors.aretePurple,
+    backgroundColor: colors.aretePastel,
+  },
+  matchCardMatched: {
+    borderColor: colors.successGreen,
+    backgroundColor: colors.successPastel,
+    opacity: 0.6,
+  },
+  matchCardWrong: {
+    borderColor: colors.errorRed,
+    backgroundColor: colors.errorPastel,
+  },
+  matchCardText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  matchCardTextMatched: {
+    color: colors.successGreenDark,
   },
   audioSpeakerBtn: {
     flexDirection: 'row',
@@ -734,6 +852,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 4,
     borderBottomColor: colors.monteDark,
+    shadowColor: colors.monteDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
   },
   checkButtonActive: {
     opacity: 1,
@@ -777,6 +900,12 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 16,
     alignItems: 'center',
+    borderBottomWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
   },
   continueButtonText: {
     color: '#FFFFFF',

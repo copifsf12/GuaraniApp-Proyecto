@@ -5,22 +5,40 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
-  Alert
+  SafeAreaView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 import Header from '../components/Header';
 import MascotAguara from '../components/MascotAguara';
+import PressableScale from '../components/PressableScale';
+
+// 🎨 Mapeo de íconos: convierte nombres de la BD a íconos válidos de Ionicons
+const ICON_MAP = {
+  'hat-cowboy': 'shirt',
+  'shirt': 'shirt',
+  'mask': 'happy-outline',
+  'palette': 'color-palette',
+  'shield': 'shield-checkmark',
+  'heart': 'heart',
+  'color-filter': 'color-filter',
+  'flame': 'flame',
+  'gift': 'gift',
+};
+
+function getIcon(name) {
+  if (!name) return 'help-circle';
+  // Si el nombre existe en el mapa, úsalo; si no, intenta usarlo directo
+  return ICON_MAP[name] || name;
+}
 
 export default function ShopScreen() {
   const { user, shopItems, buyShopItem, equipItem } = useApp();
   const [purchaseNotice, setPurchaseNotice] = useState(null);
 
   const handleAction = async (item) => {
-    // Los potenciadores (ej: recarga de vidas) son consumibles: siempre se compran de nuevo
-    const isOwned = item.category !== 'powerup' && user.inventory.includes(item.key);
+    const isOwned = user.inventory.includes(item.key);
 
     if (isOwned) {
       await equipItem(item.category, item.key);
@@ -41,7 +59,7 @@ export default function ShopScreen() {
     <SafeAreaView style={styles.container}>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Mascot Showcase with Equipped Gear */}
+        {/* Mascot Showcase */}
         <View style={styles.mascotShowcase}>
           <MascotAguara
             size={130}
@@ -53,7 +71,7 @@ export default function ShopScreen() {
           </View>
         </View>
 
-        {/* Purchase Notification Banner */}
+        {/* Purchase Notification */}
         {purchaseNotice && (
           <View style={styles.noticeBanner}>
             <Ionicons name="sparkles" size={18} color="#FFFFFF" />
@@ -61,36 +79,36 @@ export default function ShopScreen() {
           </View>
         )}
 
-        {/* Catalog Categories */}
+        {/* Ropa y Accesorios */}
         <Text style={styles.sectionHeader}>Ropa y Accesorios para Aguará</Text>
 
         {shopItems.filter(i => i.category === 'hat' || i.category === 'costume').map(item => {
           const isOwned = user.inventory.includes(item.key);
           const isEquipped = user.equippedHat === item.key || user.equippedOutfit === item.key;
+          const iconName = getIcon(item.icon);
 
           return (
             <View key={item.id} style={styles.shopCard}>
               <View style={styles.shopIconCircle}>
-                <Ionicons name={item.icon} size={30} color={colors.terracotaPrimary} />
+                <Ionicons name={iconName} size={30} color={colors.terracotaPrimary} />
               </View>
 
               <View style={{ flex: 1, marginLeft: 14 }}>
                 <View style={styles.itemTag}>
-                  <Text style={styles.itemTagText}>{item.tag}</Text>
+                  <Text style={styles.itemTagText}>{item.tag || item.category}</Text>
                 </View>
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemDesc}>{item.description}</Text>
               </View>
 
-              {/* Action Button */}
-              <TouchableOpacity
+              <PressableScale
                 style={[
                   styles.actionBtn,
                   isEquipped && styles.actionBtnEquipped,
                   isOwned && !isEquipped && styles.actionBtnOwned,
                 ]}
                 onPress={() => handleAction(item)}
-                activeOpacity={0.8}
+                pulse={!isEquipped}
               >
                 {isEquipped ? (
                   <Text style={styles.actionBtnText}>Equipado</Text>
@@ -102,38 +120,42 @@ export default function ShopScreen() {
                     <Text style={styles.priceText}>{item.price}</Text>
                   </View>
                 )}
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           );
         })}
 
+        {/* Potenciadores */}
         <Text style={[styles.sectionHeader, { marginTop: 24 }]}>Potenciadores del Chaco</Text>
 
         {shopItems.filter(i => i.category === 'powerup').map(item => {
+          const iconName = getIcon(item.icon);
           return (
             <View key={item.id} style={styles.shopCard}>
               <View style={[styles.shopIconCircle, { backgroundColor: colors.montePastel }]}>
-                <Ionicons name={item.icon} size={30} color={colors.montePrimary} />
+                <Ionicons name={iconName} size={30} color={colors.montePrimary} />
               </View>
 
               <View style={{ flex: 1, marginLeft: 14 }}>
                 <View style={[styles.itemTag, { backgroundColor: colors.montePastel }]}>
-                  <Text style={[styles.itemTagText, { color: colors.monteDark }]}>{item.tag}</Text>
+                  <Text style={[styles.itemTagText, { color: colors.monteDark }]}>
+                    {item.tag || item.category}
+                  </Text>
                 </View>
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemDesc}>{item.description}</Text>
               </View>
 
-              <TouchableOpacity
+              <PressableScale
                 style={styles.actionBtn}
                 onPress={() => handleAction(item)}
-                activeOpacity={0.8}
+                pulse
               >
                 <View style={styles.priceRow}>
                   <Ionicons name="color-filter" size={14} color="#FFFFFF" />
                   <Text style={styles.priceText}>{item.price}</Text>
                 </View>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           );
         })}
@@ -143,14 +165,8 @@ export default function ShopScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.sandBackground,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: colors.sandBackground },
+  scrollContent: { padding: 20, paddingBottom: 40 },
   mascotShowcase: {
     backgroundColor: '#FFFFFF',
     borderRadius: 22,
@@ -188,11 +204,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     gap: 8,
   },
-  noticeText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
+  noticeText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
   sectionHeader: {
     fontSize: 18,
     fontWeight: '900',
@@ -208,11 +220,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 2,
     borderColor: colors.sandBorder,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   shopIconCircle: {
     width: 54,
@@ -230,22 +237,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 4,
   },
-  itemTagText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.terracotaDark,
-  },
-  itemName: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  itemDesc: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 16,
-  },
+  itemTagText: { fontSize: 10, fontWeight: '800', color: colors.terracotaDark },
+  itemName: { fontSize: 15, fontWeight: '800', color: colors.textPrimary },
+  itemDesc: { fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 16 },
   actionBtn: {
     backgroundColor: colors.montePrimary,
     paddingVertical: 10,
@@ -254,6 +248,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 78,
+    borderBottomWidth: 3,
+    borderBottomColor: colors.monteDark,
   },
   actionBtnEquipped: {
     backgroundColor: colors.montePastel,
@@ -265,24 +261,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.sandBorder,
   },
-  actionBtnText: {
-    color: colors.monteDark,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  actionBtnTextOwned: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '800',
-  },
+  actionBtnText: { color: colors.monteDark, fontSize: 12, fontWeight: '800' },
+  actionBtnTextOwned: { color: colors.textPrimary, fontSize: 12, fontWeight: '800' },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  priceText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '900',
-  },
+  priceText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' },
 });

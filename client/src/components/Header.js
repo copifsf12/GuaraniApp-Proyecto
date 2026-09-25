@@ -1,11 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 
-export default function Header({ onVariantPress = null }) {
+export default function Header({ onVariantPress = null, onHeartsPress = null }) {
   const { user } = useApp();
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  // Acepta ambos formatos: camelCase y snake_case
+  const heartRegenAt = user?.heartRegenAt || user?.heart_regen_at;
+
+  useEffect(() => {
+    if (!heartRegenAt || (user?.hearts ?? 0) >= (user?.maxHearts ?? 5)) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const updateTimer = () => {
+      const regenAt = new Date(heartRegenAt).getTime();
+      const now = Date.now();
+      const diff = regenAt - now;
+
+      if (diff <= 0) {
+        setTimeLeft('00:00');
+        return;
+      }
+
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      );
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [heartRegenAt, user?.hearts, user?.maxHearts]);
+
+  if (!user) return null;
 
   const variantLabel = user.dialectVariant === 'izoceño'
     ? 'Izoceño'
@@ -13,43 +47,50 @@ export default function Header({ onVariantPress = null }) {
     ? 'Simba'
     : 'Ava Guaraní';
 
+  const hearts = user.hearts ?? 5;
+
   return (
     <View style={styles.headerContainer}>
-      {/* Dialect Indicator Pill */}
       <TouchableOpacity
         style={styles.variantPill}
         onPress={onVariantPress}
         activeOpacity={0.7}
       >
-        <Ionicons name="location" size={16} color={colors.montePrimary} />
-        <Text style={styles.variantText}>{variantLabel}</Text>
+        <Ionicons name="location" size={12} color={colors.montePrimary} />
+        <Text style={styles.variantText} numberOfLines={1}>{variantLabel}</Text>
       </TouchableOpacity>
 
-      {/* Gamification Counters */}
       <View style={styles.statsContainer}>
-        {/* Streak Flame (Tatá) */}
+        {/* Streak */}
         <View style={styles.statPill}>
-          <Ionicons name="flame" size={20} color={colors.tataFire} />
+          <Ionicons name="flame" size={14} color={colors.tataFire} />
           <Text style={[styles.statValue, { color: colors.tataFire }]}>
             {user.streakDays}
           </Text>
         </View>
 
-        {/* Pottery Jar Coins (Yapepó / Mba'e) */}
+        {/* Coins */}
         <View style={styles.statPill}>
-          <Ionicons name="color-filter" size={18} color={colors.terracotaMedium} />
+          <Ionicons name="color-filter" size={13} color={colors.terracotaMedium} />
           <Text style={[styles.statValue, { color: colors.terracotaMedium }]}>
             {user.coinsMbae}
           </Text>
         </View>
 
-        {/* Hearts (Vidas / Semillas) */}
-        <View style={styles.statPill}>
-          <Ionicons name="heart" size={19} color={colors.errorRed} />
+        {/* Hearts con timer + onPress */}
+        <TouchableOpacity
+          style={styles.statPill}
+          onPress={onHeartsPress}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="heart" size={14} color={colors.errorRed} />
           <Text style={[styles.statValue, { color: colors.errorRed }]}>
-            {user.hearts}
+            {hearts}
           </Text>
-        </View>
+          {timeLeft && (
+            <Text style={styles.timerText}>{timeLeft}</Text>
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -60,8 +101,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 2,
     borderBottomColor: colors.sandBorder,
@@ -75,36 +116,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.montePastel,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1.5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 14,
+    borderWidth: 1.2,
     borderColor: colors.monteMedium,
+    maxWidth: 110,
   },
   variantText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '700',
     color: colors.monteDark,
-    marginLeft: 4,
+    marginLeft: 3,
   },
   statsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 5,
   },
   statPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.sandBackground,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 14,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 11,
     borderWidth: 1,
     borderColor: colors.sandBorder,
   },
   statValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '800',
-    marginLeft: 4,
+    marginLeft: 3,
+  },
+  timerText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.textMuted,
+    marginLeft: 2,
   },
 });

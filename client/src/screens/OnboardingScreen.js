@@ -11,6 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 import MascotAguara from '../components/MascotAguara';
+import OnboardingBackground from '../components/OnboardingBackground';
+import PressableScale from '../components/PressableScale';
 import { DIALECT_VARIANTS, AGE_GROUPS, DAILY_GOALS } from '../data/initialData';
 
 export default function OnboardingScreen() {
@@ -39,7 +41,7 @@ export default function OnboardingScreen() {
   // -------------------------------------------------------------
   if (step === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <OnboardingBackground style={styles.container}>
         <View style={styles.topPattern}>
           <Text style={styles.badgeText}>EL IDIOMA DEL GRAN CHACO</Text>
         </View>
@@ -56,14 +58,14 @@ export default function OnboardingScreen() {
         </View>
 
         <View style={styles.actionsContainer}>
-          <TouchableOpacity
+          <PressableScale
             style={styles.primaryButton}
             onPress={() => setStep(1)}
-            activeOpacity={0.85}
+            pulse
           >
             <Text style={styles.primaryButtonText}>Empezar desde cero</Text>
             <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          </PressableScale>
 
           <TouchableOpacity
             style={styles.secondaryButton}
@@ -73,7 +75,7 @@ export default function OnboardingScreen() {
             <Text style={styles.secondaryButtonText}>Ya tengo una cuenta</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </OnboardingBackground>
     );
   }
 
@@ -82,7 +84,7 @@ export default function OnboardingScreen() {
   // -------------------------------------------------------------
   if (step === 1) {
     return (
-      <SafeAreaView style={styles.container}>
+      <OnboardingBackground style={styles.container}>
         <View style={styles.stepHeader}>
           <TouchableOpacity onPress={() => setStep(0)} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -133,16 +135,16 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         <View style={styles.bottomNav}>
-          <TouchableOpacity
+          <PressableScale
             style={styles.primaryButton}
             onPress={() => setStep(2)}
-            activeOpacity={0.85}
+            pulse
           >
             <Text style={styles.primaryButtonText}>Continuar</Text>
             <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          </PressableScale>
         </View>
-      </SafeAreaView>
+      </OnboardingBackground>
     );
   }
 
@@ -151,7 +153,7 @@ export default function OnboardingScreen() {
   // -------------------------------------------------------------
   if (step === 2) {
     return (
-      <SafeAreaView style={styles.container}>
+      <OnboardingBackground style={styles.container}>
         <View style={styles.stepHeader}>
           <TouchableOpacity onPress={() => setStep(1)} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -196,16 +198,16 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         <View style={styles.bottomNav}>
-          <TouchableOpacity
+          <PressableScale
             style={styles.primaryButton}
             onPress={() => setStep(3)}
-            activeOpacity={0.85}
+            pulse
           >
             <Text style={styles.primaryButtonText}>Continuar</Text>
             <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          </PressableScale>
         </View>
-      </SafeAreaView>
+      </OnboardingBackground>
     );
   }
 
@@ -214,7 +216,7 @@ export default function OnboardingScreen() {
   // -------------------------------------------------------------
   if (step === 3) {
     return (
-      <SafeAreaView style={styles.container}>
+      <OnboardingBackground style={styles.container}>
         <View style={styles.stepHeader}>
           <TouchableOpacity onPress={() => setStep(2)} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -259,16 +261,16 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         <View style={styles.bottomNav}>
-          <TouchableOpacity
+          <PressableScale
             style={styles.primaryButton}
             onPress={() => setStep(4)}
-            activeOpacity={0.85}
+            pulse
           >
             <Text style={styles.primaryButtonText}>Continuar</Text>
             <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          </PressableScale>
         </View>
-      </SafeAreaView>
+      </OnboardingBackground>
     );
   }
 
@@ -276,7 +278,7 @@ export default function OnboardingScreen() {
   // STEP 4: LEVEL CHOICE (DIAGNOSTIC VS START FRESH)
   // -------------------------------------------------------------
   return (
-    <SafeAreaView style={styles.container}>
+    <OnboardingBackground style={styles.container}>
       <View style={styles.stepHeader}>
         <TouchableOpacity onPress={() => setStep(3)} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -324,14 +326,13 @@ export default function OnboardingScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.terracotaDark} />
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </OnboardingBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.sandBackground,
   },
   topPattern: {
     alignItems: 'center',
@@ -384,6 +385,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderBottomColor: colors.monteDark,
     gap: 8,
+    shadowColor: colors.monteDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
   },
   primaryButtonText: {
     color: '#FFFFFF',
