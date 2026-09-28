@@ -71,9 +71,6 @@ export async function saveSettings(token, settings) {
 }
 
 // ---- Unidades y lecciones ----
-// Normaliza la forma de datos del backend a la misma forma que ya usaban
-// las pantallas (LOCAL_UNITS en initialData.js), para no tener que reescribir
-// todas las pantallas de una sola vez.
 export async function fetchUnits(token) {
   const data = await request('/units', { token });
   const units = data.units.map(unit => ({
@@ -91,11 +88,10 @@ export async function fetchUnits(token) {
   return { units, userStats: data.user_stats };
 }
 
-export async function fetchLessonExercises(token, lessonId) {
-  const data = await request(`/lessons/${lessonId}/exercises`, { token });
+// 🎯 Modificado: ahora acepta ageGroup
+export async function fetchLessonExercises(token, lessonId, ageGroup = 'adulto') {
+  const data = await request(`/lessons/${lessonId}/exercises?age_group=${ageGroup}`, { token });
 
-  // Normaliza los nombres de campo de Supabase a los que ya usan las pantallas
-  // (type, audio_text, chips, special_keys), igual que hicimos con units/lessons.
   const exercises = (data.exercises || []).map(ex => {
     const base = {
       id: ex.id,
@@ -114,7 +110,6 @@ export async function fetchLessonExercises(token, lessonId) {
     if (ex.exercise_type === 'special_keyboard') {
       return { ...base, special_keys: ex.options || [] };
     }
-    // card_selection, nasal_discrimination, audio_listening
     return { ...base, options: ex.options || [] };
   });
 
@@ -129,10 +124,32 @@ export async function completeLessonRequest(token, lessonId, { accuracy, time_sp
   });
 }
 
+// 🆕 Completar juego (da recompensa)
+export async function completeGameRequest(token, gameId, { xp_earned, coins_earned }) {
+  return request(`/games/${gameId}/complete`, {
+    method: 'POST',
+    body: { xp_earned, coins_earned },
+    token
+  });
+}
+
+// 🆕 Pagar Mbae (para reintentar / saltar juego)
+export async function payCostRequest(token, cost, reason = 'game') {
+  return request('/user/pay', {
+    method: 'POST',
+    body: { cost, reason },
+    token
+  });
+}
+
+// 💔 NUEVO: Perder un corazón (sincroniza con el servidor)
+export async function loseHeartRequest(token) {
+  return request('/user/lose-heart', { method: 'POST', token });
+}
+
 // ---- Cuentos (Kassukuaa Stories) ----
 export async function fetchStories(token) {
   const data = await request('/stories', { token });
-  // Normaliza a la forma que ya usaba StoriesScreen (LOCAL_STORIES)
   return data.stories.map(story => ({
     ...story,
     xp: story.xp_reward,
@@ -157,12 +174,19 @@ export async function fetchShop(token) {
       key: item.item_key,
       price: item.price_mbae
     })),
-    balance: data.user_balance
+    balance: data.user_balance,
+    hearts: data.user_hearts,
+    maxHearts: data.user_max_hearts
   };
 }
 
-export async function purchaseItemRequest(token, itemKey) {
-  return request('/shop/purchase', { method: 'POST', body: { item_key: itemKey }, token });
+// 🎯 MODIFICADO: ahora acepta quantity para comprar N corazones
+export async function purchaseItemRequest(token, itemKey, quantity = 1) {
+  return request('/shop/purchase', {
+    method: 'POST',
+    body: { item_key: itemKey, quantity },
+    token
+  });
 }
 
 // ---- Traductor con IA ----
@@ -181,6 +205,11 @@ export async function fetchTranslationHistory(token) {
 
 export async function toggleFavoriteTranslation(token, translationId) {
   return request(`/translations/${translationId}/favorite`, { method: 'POST', token });
+}
+
+// 🏆 Leaderboard con usuarios reales (Top 30)
+export async function fetchLeaderboard(token) {
+  return request('/leagues/leaderboard', { token });
 }
 
 export const sessionStorage = { saveSession, loadSession, clearSession };

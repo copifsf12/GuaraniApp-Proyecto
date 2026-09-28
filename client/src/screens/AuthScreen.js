@@ -5,24 +5,28 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
+import { AGE_GROUPS } from '../data/initialData';
 import MascotAguara from '../components/MascotAguara';
 import PressableScale from '../components/PressableScale';
 
 export default function AuthScreen() {
-  const { setCurrentScreen, login, register, authLoading, onboardingDraft } = useApp();
+  const { setCurrentScreen, login, register, authLoading, onboardingDraft, setOnboardingDraft } = useApp();
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState(null);
   const [infoMessage, setInfoMessage] = useState(null);
+
+  // 🎯 Edad seleccionada para el registro
+  const [selectedAge, setSelectedAge] = useState(onboardingDraft?.ageGroup || 'adulto');
 
   const handleSubmit = async () => {
     setFormError(null);
@@ -36,28 +40,27 @@ export default function AuthScreen() {
     try {
       if (isLogin) {
         await login({ email: email.trim(), password });
-        // AppContext navega a 'welcome' automáticamente si el login fue exitoso
       } else {
+        // 🎯 Actualizar el draft del onboarding con la edad seleccionada
+        setOnboardingDraft(prev => ({ ...prev, ageGroup: selectedAge }));
+
         const data = await register({
           email: email.trim(),
           password,
           username: username.trim() || 'Nuevo Explorador',
           dialect_variant: onboardingDraft.dialectVariant,
-          age_group: onboardingDraft.ageGroup,
+          age_group: selectedAge,   // 🎯 La edad elegida en el formulario
           daily_goal_minutes: onboardingDraft.dailyGoalMinutes
         });
 
-        // Limpiar los campos del formulario
         setUsername('');
         setEmail('');
         setPassword('');
 
-        // Mostrar mensaje de éxito
         setInfoMessage(
           data.message || "✅ Cuenta creada exitosamente. Ahora inicia sesión con tu correo y contraseña."
         );
 
-        // Cambiar automáticamente a la pestaña de iniciar sesión
         setIsLogin(true);
       }
     } catch (e) {
@@ -66,9 +69,8 @@ export default function AuthScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Back button */}
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => setCurrentScreen('onboarding')}
@@ -77,7 +79,6 @@ export default function AuthScreen() {
           <Text style={styles.backText}>Volver</Text>
         </TouchableOpacity>
 
-        {/* Mascot Greeting */}
         <MascotAguara
           size={110}
           speechText={
@@ -87,7 +88,6 @@ export default function AuthScreen() {
           }
         />
 
-        {/* Auth Mode Toggle Tabs */}
         <View style={styles.tabSwitcher}>
           <TouchableOpacity
             style={[styles.tabButton, isLogin && styles.tabButtonActive]}
@@ -107,22 +107,60 @@ export default function AuthScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Form Fields */}
         <View style={styles.formContainer}>
           {!isLogin && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Tu Nombre o Apodo:</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="person-outline" size={20} color={colors.textMuted} />
-                <TextInput
-                  style={styles.inputField}
-                  placeholder="Ej: Kuarahy o Carlos"
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="words"
-                />
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Tu Nombre o Apodo:</Text>
+                <View style={styles.inputWrapper}>
+                  <Ionicons name="person-outline" size={20} color={colors.textMuted} />
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="Ej: Kuarahy o Carlos"
+                    value={username}
+                    onChangeText={setUsername}
+                    autoCapitalize="words"
+                  />
+                </View>
               </View>
-            </View>
+
+              {/* 🎯 SELECTOR DE EDAD EN EL REGISTRO */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>🎂 ¿Cuál es tu grupo de edad?</Text>
+                <Text style={styles.ageHint}>
+                  Adaptamos el contenido y las preguntas según tu edad.
+                </Text>
+
+                <View style={styles.ageOptionsRow}>
+                  {AGE_GROUPS.map(group => {
+                    const isSelected = selectedAge === group.id;
+                    return (
+                      <TouchableOpacity
+                        key={group.id}
+                        style={[styles.ageChip, isSelected && styles.ageChipSelected]}
+                        onPress={() => setSelectedAge(group.id)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons
+                          name={group.icon || 'person-outline'}
+                          size={20}
+                          color={isSelected ? '#FFFFFF' : colors.montePrimary}
+                        />
+                        <Text style={[styles.ageChipText, isSelected && styles.ageChipTextSelected]}>
+                          {group.label.split(' ')[0]}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {selectedAge && (
+                  <Text style={styles.selectedAgeSubtext}>
+                    {AGE_GROUPS.find(g => g.id === selectedAge)?.subtext}
+                  </Text>
+                )}
+              </View>
+            </>
           )}
 
           <View style={styles.inputGroup}>
@@ -157,7 +195,6 @@ export default function AuthScreen() {
           {formError && <Text style={styles.errorText}>{formError}</Text>}
           {infoMessage && <Text style={styles.infoText}>{infoMessage}</Text>}
 
-          {/* Submit Button */}
           <PressableScale
             style={[styles.submitButton, authLoading && { opacity: 0.7 }]}
             onPress={handleSubmit}
@@ -261,6 +298,49 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginLeft: 8,
   },
+
+  // 🎯 SELECTOR DE EDAD
+  ageHint: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontStyle: 'italic',
+    marginBottom: 10,
+  },
+  ageOptionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  ageChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: colors.montePrimary,
+    backgroundColor: '#FFFFFF',
+    gap: 6,
+  },
+  ageChipSelected: {
+    backgroundColor: colors.montePrimary,
+    borderColor: colors.monteDark,
+  },
+  ageChipText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.monteDark,
+  },
+  ageChipTextSelected: {
+    color: '#FFFFFF',
+  },
+  selectedAgeSubtext: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+
   submitButton: {
     backgroundColor: colors.terracotaPrimary,
     paddingVertical: 15,

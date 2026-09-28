@@ -13,6 +13,8 @@ import PathScreen from './src/screens/PathScreen';
 import LessonScreen from './src/screens/LessonScreen';
 import LessonTutorialScreen from './src/screens/LessonTutorialScreen';
 import LessonCompleteScreen from './src/screens/LessonCompleteScreen';
+import NoHeartsScreen from './src/screens/NoHeartsScreen';
+import GameScreen from './src/screens/GameScreen';   // 🆕 NUEVA PANTALLA
 import StoriesScreen from './src/screens/StoriesScreen';
 import TranslatorScreen from './src/screens/TranslatorScreen';
 import LeaguesScreen from './src/screens/LeaguesScreen';
@@ -56,12 +58,22 @@ function MainNavigator() {
     return <LessonScreen />;
   }
 
-  // 5. Lesson Victory / Results Screen
+  // 🆕 6. Game Engine (para los juegos entre lecciones)
+  if (currentScreen === 'game') {
+    return <GameScreen />;
+  }
+
+  // 🎯 7. Pantalla "Sin Corazones"
+  if (currentScreen === 'no_hearts') {
+    return <NoHeartsScreen />;
+  }
+
+  // 8. Lesson Victory / Results Screen
   if (currentScreen === 'lesson_complete') {
     return <LessonCompleteScreen />;
   }
 
-  // 6. Main Hub (Tab Bar View)
+  // 9. Main Hub (Tab Bar View)
   return (
     <SafeAreaView style={styles.mainContainer} edges={['top']}>
       <View style={styles.tabContent}>

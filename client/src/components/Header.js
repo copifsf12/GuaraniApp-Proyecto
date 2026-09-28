@@ -8,11 +8,12 @@ export default function Header({ onVariantPress = null, onHeartsPress = null }) 
   const { user } = useApp();
   const [timeLeft, setTimeLeft] = useState(null);
 
-  // Acepta ambos formatos: camelCase y snake_case
   const heartRegenAt = user?.heartRegenAt || user?.heart_regen_at;
+  const hearts = user?.hearts ?? 5;
+  const maxHearts = user?.maxHearts ?? 5;
 
   useEffect(() => {
-    if (!heartRegenAt || (user?.hearts ?? 0) >= (user?.maxHearts ?? 5)) {
+    if (!heartRegenAt || hearts >= maxHearts) {
       setTimeLeft(null);
       return;
     }
@@ -37,7 +38,7 @@ export default function Header({ onVariantPress = null, onHeartsPress = null }) 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [heartRegenAt, user?.hearts, user?.maxHearts]);
+  }, [heartRegenAt, hearts, maxHearts]);
 
   if (!user) return null;
 
@@ -46,8 +47,6 @@ export default function Header({ onVariantPress = null, onHeartsPress = null }) 
     : user.dialectVariant === 'simba'
     ? 'Simba'
     : 'Ava Guaraní';
-
-  const hearts = user.hearts ?? 5;
 
   return (
     <View style={styles.headerContainer}>
@@ -61,7 +60,7 @@ export default function Header({ onVariantPress = null, onHeartsPress = null }) 
       </TouchableOpacity>
 
       <View style={styles.statsContainer}>
-        {/* Streak */}
+        {/* 🔥 Racha */}
         <View style={styles.statPill}>
           <Ionicons name="flame" size={14} color={colors.tataFire} />
           <Text style={[styles.statValue, { color: colors.tataFire }]}>
@@ -69,7 +68,7 @@ export default function Header({ onVariantPress = null, onHeartsPress = null }) 
           </Text>
         </View>
 
-        {/* Coins */}
+        {/* 🪙 Monedas */}
         <View style={styles.statPill}>
           <Ionicons name="color-filter" size={13} color={colors.terracotaMedium} />
           <Text style={[styles.statValue, { color: colors.terracotaMedium }]}>
@@ -77,16 +76,23 @@ export default function Header({ onVariantPress = null, onHeartsPress = null }) 
           </Text>
         </View>
 
-        {/* Hearts con timer + onPress */}
+        {/* ❤️ Corazones individuales */}
         <TouchableOpacity
-          style={styles.statPill}
+          style={styles.heartsPill}
           onPress={onHeartsPress}
           activeOpacity={0.7}
         >
-          <Ionicons name="heart" size={14} color={colors.errorRed} />
-          <Text style={[styles.statValue, { color: colors.errorRed }]}>
-            {hearts}
-          </Text>
+          <View style={styles.heartsRow}>
+            {Array.from({ length: maxHearts }).map((_, i) => (
+              <Ionicons
+                key={i}
+                name={i < hearts ? 'heart' : 'heart-outline'}
+                size={14}
+                color={i < hearts ? colors.errorRed : '#C0C0C0'}
+                style={styles.heartIcon}
+              />
+            ))}
+          </View>
           {timeLeft && (
             <Text style={styles.timerText}>{timeLeft}</Text>
           )}
@@ -121,7 +127,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1.2,
     borderColor: colors.monteMedium,
-    maxWidth: 110,
+    maxWidth: 100,
   },
   variantText: {
     fontSize: 11,
@@ -132,7 +138,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
   },
   statPill: {
     flexDirection: 'row',
@@ -149,10 +155,29 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginLeft: 3,
   },
+  heartsPill: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.sandBackground,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: colors.sandBorder,
+  },
+  heartsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 1,
+  },
+  heartIcon: {
+    marginHorizontal: 0.5,
+  },
   timerText: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '700',
     color: colors.textMuted,
-    marginLeft: 2,
+    marginTop: 1,
   },
 });

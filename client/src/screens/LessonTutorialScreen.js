@@ -21,15 +21,26 @@ export default function LessonTutorialScreen() {
     [activeExercises, activeLesson]
   );
 
-  const vocabCards = useMemo(
-    () =>
-      exercises.map(ex => ({
-        guarani: ex.audio_text || ex.correct_answer,
-        explanation: ex.explanation,
-        culturalFact: ex.cultural_fact
-      })),
-    [exercises]
-  );
+  // 🎯 Solo 3 tarjetas ÚNICAS (sin repetir palabra) para el tutorial
+  const vocabCards = useMemo(() => {
+    const cards = exercises.map(ex => ({
+      guarani: ex.audio_text || ex.correct_answer,
+      explanation: ex.explanation,
+      culturalFact: ex.cultural_fact
+    }));
+
+    const unique = [];
+    const seen = new Set();
+    for (const c of cards) {
+      if (!c.guarani) continue;
+      const key = c.guarani.toLowerCase().trim();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(c);
+      if (unique.length === 3) break;
+    }
+    return unique;
+  }, [exercises]);
 
   const current = vocabCards[cardIndex];
   const isLastCard = cardIndex === vocabCards.length - 1;
@@ -44,6 +55,17 @@ export default function LessonTutorialScreen() {
   };
 
   const handleSkip = () => setCurrentScreen('lesson');
+
+  // 🛡️ Si por alguna razón no hay tarjetas, saltamos directo a la lección
+  if (!current) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: colors.textMuted }}>Cargando tutorial...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -96,7 +118,9 @@ export default function LessonTutorialScreen() {
             🎤 Ahora repítela en voz alta antes de continuar.
           </Text>
 
-          <Text style={styles.explanationText}>{current.explanation}</Text>
+          {current.explanation ? (
+            <Text style={styles.explanationText}>{current.explanation}</Text>
+          ) : null}
 
           {current.culturalFact ? (
             <View style={styles.factBox}>
@@ -226,6 +250,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 21,
     marginBottom: 12,
+    marginTop: 12,
   },
   factBox: {
     flexDirection: 'row',
@@ -234,6 +259,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.6)',
     padding: 12,
     borderRadius: 12,
+    marginTop: 6,
   },
   factText: {
     flex: 1,

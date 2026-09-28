@@ -30,7 +30,13 @@ const ICON_MAP = {
 const getValidIcon = (icon) => ICON_MAP[icon] || icon || 'ribbon';
 
 export default function LessonCompleteScreen() {
-  const { lastLessonResult, user, setCurrentScreen, goToNextLesson } = useApp();
+  const {
+    lastLessonResult,
+    user,
+    setCurrentScreen,
+    goToNextLesson,
+    goBackToMap
+  } = useApp();
   const [achievementModalVisible, setAchievementModalVisible] = useState(false);
 
   const xpGained = lastLessonResult?.xpGained ?? 15;
@@ -149,14 +155,20 @@ export default function LessonCompleteScreen() {
           </View>
         )}
 
-        <PressableScale style={styles.continueBtn} onPress={goToNextLesson} pulse>
+        {/* 🦊 SIGUIENTE LECCIÓN → va al mapa y el zorro camina */}
+        <PressableScale
+          style={styles.continueBtn}
+          onPress={goToNextLesson}
+          pulse
+        >
           <Text style={styles.continueBtnText}>SIGUIENTE LECCIÓN</Text>
           <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
         </PressableScale>
 
+        {/* 🦊 VOLVER AL SENDERO → va al mapa y el zorro camina */}
         <PressableScale
           style={styles.secondaryBtn}
-          onPress={() => setCurrentScreen('main')}
+          onPress={goBackToMap}
         >
           <Text style={styles.secondaryBtnText}>Volver al sendero</Text>
         </PressableScale>

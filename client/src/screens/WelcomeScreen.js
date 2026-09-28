@@ -14,14 +14,13 @@ import MascotAguara from '../components/MascotAguara';
 import PressableScale from '../components/PressableScale';
 
 export default function WelcomeScreen() {
-  const { user, setCurrentScreen } = useApp();
+  const { user, setCurrentScreen, logout } = useApp();
 
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
 
   useEffect(() => {
-    // Animación de entrada
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -36,10 +35,10 @@ export default function WelcomeScreen() {
       })
     ]).start();
 
-    // Timer: entra solo después de 6 segundos
+    // 🎯 Redirigir al mapa después de 2.5 segundos
     const timer = setTimeout(() => {
       setCurrentScreen('main');
-    }, 6000);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -48,6 +47,10 @@ export default function WelcomeScreen() {
 
   const handleContinue = () => {
     setCurrentScreen('main');
+  };
+
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -93,6 +96,16 @@ export default function WelcomeScreen() {
           <Text style={styles.continueButtonText}>Continuar</Text>
           <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
         </PressableScale>
+
+        {/* Botón Cerrar Sesión */}
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="log-out-outline" size={18} color={colors.errorRed} />
+          <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+        </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>
   );
@@ -171,5 +184,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '900',
     letterSpacing: 0.5
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginTop: 20,
+    gap: 6,
+  },
+  logoutButtonText: {
+    color: colors.errorRed,
+    fontSize: 14,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   }
 });

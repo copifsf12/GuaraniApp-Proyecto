@@ -4,8 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
-  SafeAreaView
+  ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
@@ -13,27 +12,40 @@ import { useApp } from '../context/AppContext';
 import MascotAguara from '../components/MascotAguara';
 import OnboardingBackground from '../components/OnboardingBackground';
 import PressableScale from '../components/PressableScale';
+import DiagnosticQuizModal from '../components/DiagnosticQuizModal';
 import { DIALECT_VARIANTS, AGE_GROUPS, DAILY_GOALS } from '../data/initialData';
 
 export default function OnboardingScreen() {
   const { onboardingDraft, setOnboardingDraft, setCurrentScreen } = useApp();
 
-  // Onboarding Step: 0 = Welcome, 1 = Dialect, 2 = Age, 3 = Goal, 4 = Level
   const [step, setStep] = useState(0);
-
   const [selectedVariant, setSelectedVariant] = useState(onboardingDraft.dialectVariant);
   const [selectedAge, setSelectedAge] = useState(onboardingDraft.ageGroup);
   const [selectedGoal, setSelectedGoal] = useState('regular');
 
-  // Handle finalize onboarding: guarda las preferencias y pasa a crear la cuenta.
-  // (Ya no hay modo invitado: para guardar progreso, hace falta una cuenta real)
-  const handleFinishOnboarding = () => {
+  // 🎯 NUEVO: modal de diagnóstico
+  const [showQuiz, setShowQuiz] = useState(false);
+
+  const handleFinishOnboarding = (levelChoice) => {
     setOnboardingDraft({
       dialectVariant: selectedVariant,
       ageGroup: selectedAge,
-      dailyGoalMinutes: selectedGoal === 'casual' ? 5 : selectedGoal === 'regular' ? 10 : selectedGoal === 'serio' ? 15 : 20
+      dailyGoalMinutes: selectedGoal === 'casual' ? 5 : selectedGoal === 'regular' ? 10 : selectedGoal === 'serio' ? 15 : 20,
+      levelChoice: levelChoice || 'fresh'
     });
     setCurrentScreen('auth');
+  };
+
+  // 🎯 NUEVO: al terminar el quiz
+  const handleQuizFinish = (score) => {
+    // Determinar unidad según el score
+    let levelChoice = 'fresh';
+    if (score === 5) levelChoice = 'unit3';
+    else if (score === 4) levelChoice = 'unit2';
+    else if (score === 3) levelChoice = 'lesson2';
+
+    setShowQuiz(false);
+    handleFinishOnboarding(levelChoice);
   };
 
   // -------------------------------------------------------------
@@ -164,7 +176,7 @@ export default function OnboardingScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Text style={styles.sectionTitle}>¿Cuál es tu grupo de edad?</Text>
           <Text style={styles.sectionDesc}>
-            Adaptamos el tamaño de textos y la dificultad de las explicaciones para que sea súper cómodo.
+            Adaptamos el contenido, la cantidad de unidades y los juegos según tu edad.
           </Text>
 
           {AGE_GROUPS.map(age => {
@@ -275,7 +287,7 @@ export default function OnboardingScreen() {
   }
 
   // -------------------------------------------------------------
-  // STEP 4: LEVEL CHOICE (DIAGNOSTIC VS START FRESH)
+  // STEP 4: LEVEL CHOICE
   // -------------------------------------------------------------
   return (
     <OnboardingBackground style={styles.container}>
@@ -292,6 +304,7 @@ export default function OnboardingScreen() {
           speechText="¡Excelente elección! ¿Cómo prefieres comenzar tu viaje?"
         />
 
+        {/* Botón: Empezar desde cero */}
         <TouchableOpacity
           style={styles.levelCard}
           onPress={() => handleFinishOnboarding('fresh')}
@@ -309,9 +322,10 @@ export default function OnboardingScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.monteDark} />
         </TouchableOpacity>
 
+        {/* 🎯 Botón: Prueba de Diagnóstico (AHORA ABRE EL MODAL) */}
         <TouchableOpacity
           style={styles.levelCard}
-          onPress={() => handleFinishOnboarding('diagnostic')}
+          onPress={() => setShowQuiz(true)}
           activeOpacity={0.85}
         >
           <View style={[styles.levelIconBadge, { backgroundColor: colors.solLight }]}>
@@ -326,233 +340,102 @@ export default function OnboardingScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.terracotaDark} />
         </TouchableOpacity>
       </ScrollView>
+
+      {/* 🎯 Modal del cuestionario */}
+      <DiagnosticQuizModal
+        visible={showQuiz}
+        onClose={() => setShowQuiz(false)}
+        onFinish={handleQuizFinish}
+      />
     </OnboardingBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  topPattern: {
-    alignItems: 'center',
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
+  container: { flex: 1 },
+  topPattern: { alignItems: 'center', paddingTop: 16, paddingBottom: 8 },
   badgeText: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    color: colors.monteDark,
-    backgroundColor: colors.montePastel,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 12,
+    fontSize: 12, fontWeight: '800', letterSpacing: 1.5,
+    color: colors.monteDark, backgroundColor: colors.montePastel,
+    paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12,
   },
-  centerContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
+  centerContent: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
   mainTitle: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: colors.terracotaDark,
-    textAlign: 'center',
-    marginTop: 14,
+    fontSize: 28, fontWeight: '900', color: colors.terracotaDark,
+    textAlign: 'center', marginTop: 14,
   },
   mainSubtitle: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 22,
-    maxWidth: 300,
+    fontSize: 15, color: colors.textSecondary, textAlign: 'center',
+    marginTop: 8, lineHeight: 22, maxWidth: 300,
   },
-  actionsContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    gap: 12,
-  },
+  actionsContainer: { paddingHorizontal: 24, paddingBottom: 24, gap: 12 },
   primaryButton: {
     backgroundColor: colors.montePrimary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 18,
-    borderBottomWidth: 4,
-    borderBottomColor: colors.monteDark,
-    gap: 8,
-    shadowColor: colors.monteDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 6,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 16, borderRadius: 18,
+    borderBottomWidth: 4, borderBottomColor: colors.monteDark, gap: 8,
+    shadowColor: colors.monteDark, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 6, elevation: 6,
   },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '800',
-  },
+  primaryButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
   secondaryButton: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 14,
-    borderRadius: 18,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.sandBorder,
+    backgroundColor: '#FFFFFF', paddingVertical: 14, borderRadius: 18,
+    alignItems: 'center', borderWidth: 2, borderColor: colors.sandBorder,
   },
-  secondaryButtonText: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  guestQuickButton: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  guestQuickText: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textDecorationLine: 'underline',
-  },
+  secondaryButtonText: { color: colors.textPrimary, fontSize: 16, fontWeight: '700' },
   stepHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.sandBorder,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: colors.sandBorder,
   },
-  backButton: {
-    padding: 6,
-  },
+  backButton: { padding: 6 },
   stepIndicator: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    marginLeft: 10,
+    fontSize: 14, fontWeight: '700', color: colors.textSecondary, marginLeft: 10,
   },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+  scrollContent: { padding: 20, paddingBottom: 40 },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    marginBottom: 6,
+    fontSize: 22, fontWeight: '800', color: colors.textPrimary, marginBottom: 6,
   },
   sectionDesc: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 18,
-    lineHeight: 20,
+    fontSize: 14, color: colors.textSecondary, marginBottom: 18, lineHeight: 20,
   },
   cardOption: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: colors.sandBorder,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, marginBottom: 12,
+    borderWidth: 2, borderColor: colors.sandBorder,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
-  cardOptionSelected: {
-    borderColor: colors.montePrimary,
-    backgroundColor: colors.montePastel,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  cardOptionSelected: { borderColor: colors.montePrimary, backgroundColor: colors.montePastel },
+  cardHeader: { flexDirection: 'row', alignItems: 'center' },
   variantIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: colors.sandBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  cardTitleSelected: {
-    color: colors.monteDark,
-  },
-  cardRegion: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.terracotaPrimary,
-    marginTop: 2,
-  },
-  cardDesc: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 8,
-    lineHeight: 18,
-  },
+  cardTitle: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
+  cardTitleSelected: { color: colors.monteDark },
+  cardRegion: { fontSize: 12, fontWeight: '600', color: colors.terracotaPrimary, marginTop: 2 },
+  cardDesc: { fontSize: 13, color: colors.textSecondary, marginTop: 8, lineHeight: 18 },
   sampleBadge: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginTop: 8,
+    backgroundColor: 'rgba(255,255,255,0.7)', alignSelf: 'flex-start',
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginTop: 8,
   },
-  sampleText: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    color: colors.monteDark,
-    fontWeight: '600',
-  },
+  sampleText: { fontSize: 12, fontStyle: 'italic', color: colors.monteDark, fontWeight: '600' },
   bottomNav: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.sandBorder,
-    backgroundColor: '#FFFFFF',
+    padding: 16, borderTopWidth: 1, borderTopColor: colors.sandBorder, backgroundColor: '#FFFFFF',
   },
   levelCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 18,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: colors.sandBorder,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    padding: 18, borderRadius: 20, borderWidth: 2, borderColor: colors.sandBorder,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 5, elevation: 3,
   },
   levelIconBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 56, height: 56, borderRadius: 28,
     backgroundColor: colors.montePastel,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center',
   },
-  levelTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  levelSubtitle: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 4,
-    lineHeight: 18,
-  },
+  levelTitle: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
+  levelSubtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 },
 });

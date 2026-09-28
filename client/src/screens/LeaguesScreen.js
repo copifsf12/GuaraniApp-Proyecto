@@ -1,116 +1,110 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  SafeAreaView
+  SafeAreaView,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 import Header from '../components/Header';
 
+const AUTO_REFRESH_MS = 30000;
+
 export default function LeaguesScreen() {
-  const { user, setCurrentScreen } = useApp();
-  const [activeLeagueIndex, setActiveLeagueIndex] = useState(0);
+  const { user, leaderboard, userRank, communityProgress, loadLeaderboard } = useApp();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const leagues = [
-    { id: 1, shortName: 'Semilla', name: 'Liga Semilla (Ra\'ỹi)', icon: 'leaf', color: colors.montePrimary },
-    { id: 2, shortName: 'Vasija', name: 'Liga Vasija (Yapepó)', icon: 'color-filter', color: colors.terracotaPrimary },
-    { id: 3, shortName: 'Mburuvicha', name: 'Liga del Mburuvicha', icon: 'trophy', color: colors.solGold }
-  ];
+  // 🎯 Carga inicial
+  useEffect(() => {
+    loadLeaderboard();
+  }, []);
 
-  // 🎯 Usuarios base (sin rank fijo)
-  const baseUsers = [
-    { name: 'Kuarahy (Sol Chaqueño)', xp: 420, isUser: false, avatar: 'paw' },
-    { name: 'Yasí (Luna del Oriente)', xp: 390, isUser: false, avatar: 'moon' },
-    { name: 'Ñanderu (Caminante)', xp: 260, isUser: false, avatar: 'walk' },
-    { name: 'Izoceño Valiente', xp: 240, isUser: false, avatar: 'shield' },
-    { name: 'Ara (Tiempo Limpio)', xp: 210, isUser: false, avatar: 'sunny' },
-    { name: 'Mainumby (Picaflor)', xp: 195, isUser: false, avatar: 'flower' },
-    { name: 'Cordillera Verde', xp: 180, isUser: false, avatar: 'leaf' },
-    { name: 'Chaco Tarijeño', xp: 170, isUser: false, avatar: 'bonfire' },
-    { name: 'Parapetí Ñe\'ẽ', xp: 155, isUser: false, avatar: 'water' },
-    { name: 'Simba Resiliente', xp: 140, isUser: false, avatar: 'fitness' },
-    { name: 'Tatú Carreta', xp: 125, isUser: false, avatar: 'planet' },
-    { name: 'Guasu Mirĩ', xp: 90, isUser: false, avatar: 'footsteps' },
-    { name: 'Pirapó', xp: 60, isUser: false, avatar: 'fish' },
-    { name: 'Yvytu (Viento del Sur)', xp: 30, isUser: false, avatar: 'cloudy' }
-  ];
+  // 🎯 Auto-refresh cada 30s (ideal para feria)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadLeaderboard();
+    }, AUTO_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, []);
 
-  // 🎯 Combina usuarios base + usuario actual, ordena por XP descendente y asigna rank dinámico
-  const leaderboardUsers = useMemo(() => {
-    const withUser = [
-      ...baseUsers,
-      {
-        name: `${user?.username || 'Tú'} (Tú)`,
-        xp: user?.xpTotal || 0,
-        isUser: true,
-        avatar: 'person'
-      }
-    ];
-    // Ordenar por XP descendente
-    withUser.sort((a, b) => b.xp - a.xp);
-    // Asignar rank 1..n
-    return withUser.map((u, i) => ({ ...u, rank: i + 1 }));
-  }, [user?.xpTotal, user?.username]);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadLeaderboard();
+    setRefreshing(false);
+  };
 
+  // 🎯 Calcular días restantes para cierre (lunes)
+  const getDaysUntilClose = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0=dom, 1=lun
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+    return daysUntilMonday;
+  };
+
+  const daysLeft = getDaysUntilClose();
+
+  // 🎯 Desafío colectivo real
   const communityGoal = {
     title: 'Meta Colectiva del Mes',
     desc: 'Completar 10,000 lecciones entre todos los estudiantes para digitalizar el cuento de los abuelos izoceños.',
-    target: 10000,
-    current: 4320,
-    percent: 43.2
+    target: communityProgress?.target || 10000,
+    current: communityProgress?.lessons || 0,
+    users: communityProgress?.users || 0,
+    percent: Math.min(100, ((communityProgress?.lessons || 0) / (communityProgress?.target || 10000)) * 100),
+  };
+
+  // 🎯 Calcular mensaje de tu posición
+  const getUserPositionMessage = () => {
+    if (!userRank || leaderboard.length === 0) return null;
+    const myEntry = leaderboard.find(u => u.isUser);
+    if (!myEntry) return null;
+
+    if (userRank === 1) {
+      const second = leaderboard[1];
+      if (second) {
+        const diff = myEntry.xp - second.xp;
+        return `🥇 ¡Vas primero! ${second.name} está a ${diff} XP de alcanzarte.`;
+      }
+      return '🥇 ¡Vas primero! ¡Sigue así!';
+    }
+
+    const above = leaderboard[userRank - 2];
+    if (above) {
+      const diff = above.xp - myEntry.xp;
+      return `🎯 Vas #${userRank}. Te faltan ${diff} XP para alcanzar a ${above.name}.`;
+    }
+    return `Vas en posición #${userRank}.`;
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <Header onHeartsPress={() => {}} />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* League Selector */}
-        <View style={styles.leagueBanner}>
-          <View style={styles.leagueSelector}>
-            {leagues.map((lg, idx) => {
-              const isSelected = activeLeagueIndex === idx;
-              return (
-                <TouchableOpacity
-                  key={lg.id}
-                  style={[styles.leaguePill, isSelected && { backgroundColor: lg.color }]}
-                  onPress={() => setActiveLeagueIndex(idx)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name={lg.icon}
-                    size={16}
-                    color={isSelected ? '#FFFFFF' : colors.textSecondary}
-                  />
-                  <Text
-                    style={[styles.leaguePillText, isSelected && styles.leaguePillTextActive]}
-                    numberOfLines={1}
-                  >
-                    {lg.shortName}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <View style={styles.currentLeagueCard}>
-            <View style={styles.leagueIconCircle}>
-              <Ionicons
-                name={leagues[activeLeagueIndex].icon}
-                size={32}
-                color="#FFFFFF"
-              />
-            </View>
-            <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={styles.leagueTitle}>{leagues[activeLeagueIndex].name}</Text>
-              <Text style={styles.leagueTime}>Faltan 4 días para el cierre semanal</Text>
-            </View>
-          </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.montePrimary} />
+        }
+      >
+        {/* 🏆 Título principal */}
+        <View style={styles.mainHeader}>
+          <Text style={styles.mainHeaderEyebrow}>🏆 LIGA DEL CHACO</Text>
+          <Text style={styles.mainHeaderTitle}>Tabla de Líderes</Text>
+          <Text style={styles.mainHeaderSubtitle}>
+            ⏰ Faltan {daysLeft} {daysLeft === 1 ? 'día' : 'días'} para el cierre semanal
+          </Text>
         </View>
+
+        {/* 🎯 Banner de tu posición */}
+        {userRank && leaderboard.length > 0 && (
+          <View style={styles.positionBanner}>
+            <Ionicons name="trophy" size={20} color={colors.solGold} />
+            <Text style={styles.positionText}>{getUserPositionMessage()}</Text>
+          </View>
+        )}
 
         {/* Community Challenge */}
         <View style={styles.challengeCard}>
@@ -120,6 +114,9 @@ export default function LeaguesScreen() {
           </View>
           <Text style={styles.challengeTitle}>{communityGoal.title}</Text>
           <Text style={styles.challengeDesc}>{communityGoal.desc}</Text>
+          <Text style={styles.challengeUsers}>
+            👥 {communityGoal.users} estudiantes participando
+          </Text>
 
           <View style={styles.challengeProgressBg}>
             <View style={[styles.challengeProgressFill, { width: `${communityGoal.percent}%` }]} />
@@ -144,67 +141,77 @@ export default function LeaguesScreen() {
 
         {/* Leaderboard */}
         <View style={styles.leaderboardBox}>
-          {leaderboardUsers.map((item, index) => {
-            const isPromotion = index < 5;
-            const isDemotion = index >= leaderboardUsers.length - 3;
+          <View style={styles.leaderboardHeader}>
+            <Text style={styles.leaderboardHeaderText}>
+              🏆 Top {leaderboard.length > 0 ? leaderboard.length : ''} competidores
+            </Text>
+          </View>
 
-            return (
-              <View
-                key={index}
-                style={[
-                  styles.userRow,
-                  item.isUser && styles.currentUserRow,
-                  isPromotion && styles.promotionBorder,
-                  isDemotion && styles.demotionBorder,
-                ]}
-              >
-                <View style={styles.rankBadge}>
-                  <Text
-                    style={[
-                      styles.rankText,
-                      index === 0 && { color: colors.solGold },
-                      index === 1 && { color: '#9E9E9E' },
-                      index === 2 && { color: colors.terracotaPrimary },
-                    ]}
-                  >
-                    {item.rank}
-                  </Text>
-                </View>
+          {leaderboard.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyText}>Cargando competidores...</Text>
+              <Text style={styles.emptySubtext}>¡Sé el primero en aparecer!</Text>
+            </View>
+          ) : (
+            leaderboard.map((item, index) => {
+              const isPromotion = index < 5;
+              const isDemotion = index >= leaderboard.length - 3 && leaderboard.length > 10;
 
+              return (
                 <View
+                  key={item.id || index}
                   style={[
-                    styles.avatarCircle,
-                    item.isUser && { backgroundColor: colors.montePrimary },
+                    styles.userRow,
+                    item.isUser && styles.currentUserRow,
+                    isPromotion && styles.promotionBorder,
+                    isDemotion && styles.demotionBorder,
                   ]}
                 >
-                  <Ionicons
-                    name={item.avatar}
-                    size={20}
-                    color={item.isUser ? '#FFFFFF' : colors.textPrimary}
-                  />
+                  <View style={styles.rankBadge}>
+                    <Text
+                      style={[
+                        styles.rankText,
+                        index === 0 && { color: colors.solGold },
+                        index === 1 && { color: '#9E9E9E' },
+                        index === 2 && { color: colors.terracotaPrimary },
+                      ]}
+                    >
+                      {item.rank}
+                    </Text>
+                  </View>
+
+                  <View style={[styles.avatarCircle, item.isUser && { backgroundColor: colors.montePrimary }]}>
+                    <Ionicons
+                      name={item.avatar || 'person'}
+                      size={20}
+                      color={item.isUser ? '#FFFFFF' : colors.textPrimary}
+                    />
+                  </View>
+
+                  <Text style={[styles.userName, item.isUser && styles.userNameActive]} numberOfLines={1}>
+                    {item.name}{item.isUser ? ' (Tú)' : ''}
+                  </Text>
+
+                  {isPromotion && (
+                    <Ionicons name="chevron-up" size={18} color={colors.successGreen} style={{ marginRight: 6 }} />
+                  )}
+                  {isDemotion && (
+                    <Ionicons name="chevron-down" size={18} color={colors.errorRed} style={{ marginRight: 6 }} />
+                  )}
+
+                  <View style={styles.scorePill}>
+                    <Text style={styles.scoreText}>{item.xp} XP</Text>
+                  </View>
                 </View>
-
-                <Text
-                  style={[styles.userName, item.isUser && styles.userNameActive]}
-                  numberOfLines={1}
-                >
-                  {item.name}
-                </Text>
-
-                {isPromotion && (
-                  <Ionicons name="chevron-up" size={18} color={colors.successGreen} style={{ marginRight: 6 }} />
-                )}
-                {isDemotion && (
-                  <Ionicons name="chevron-down" size={18} color={colors.errorRed} style={{ marginRight: 6 }} />
-                )}
-
-                <View style={styles.scorePill}>
-                  <Text style={styles.scoreText}>{item.xp} XP</Text>
-                </View>
-              </View>
-            );
-          })}
+              );
+            })
+          )}
         </View>
+
+        {/* Footer */}
+        <Text style={styles.footerText}>
+          🦊 Actualización automática cada 30 segundos
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -213,145 +220,107 @@ export default function LeaguesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sandBackground },
   scrollContent: { padding: 20, paddingBottom: 40 },
-  leagueBanner: {
+
+  // 🏆 Nuevo encabezado principal
+  mainHeader: {
     backgroundColor: '#FFFFFF',
     borderRadius: 22,
-    padding: 16,
+    padding: 20,
     borderWidth: 2,
     borderColor: colors.sandBorder,
     marginBottom: 16,
-  },
-  leagueSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-    gap: 6,
-  },
-  leaguePill: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.sandBackground,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 14,
-    gap: 4,
   },
-  leaguePillText: {
+  mainHeaderEyebrow: {
     fontSize: 11,
-    fontWeight: '700',
-    color: colors.textSecondary,
-  },
-  leaguePillTextActive: {
-    color: '#FFFFFF',
     fontWeight: '800',
+    color: colors.terracotaPrimary,
+    letterSpacing: 1.5,
+    marginBottom: 4,
   },
-  currentLeagueCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.montePastel,
-    padding: 14,
-    borderRadius: 16,
-  },
-  leagueIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.montePrimary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  leagueTitle: { fontSize: 17, fontWeight: '800', color: colors.monteDark },
-  leagueTime: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
-  challengeCard: {
-    backgroundColor: colors.aretePastel,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: colors.aretePurple,
-    marginBottom: 16,
-  },
-  challengeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  mainHeaderTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: colors.terracotaDark,
+    textAlign: 'center',
     marginBottom: 6,
   },
-  challengeTag: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.aretePurple,
-    letterSpacing: 1,
+  mainHeaderSubtitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
+
+  positionBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: colors.solLight, borderRadius: 16, padding: 14,
+    borderWidth: 2, borderColor: colors.solGold, marginBottom: 16,
+  },
+  positionText: { flex: 1, fontSize: 13, fontWeight: '700', color: colors.terracotaDark },
+
+  challengeCard: {
+    backgroundColor: colors.aretePastel, borderRadius: 20, padding: 16,
+    borderWidth: 1.5, borderColor: colors.aretePurple, marginBottom: 16,
+  },
+  challengeHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+  challengeTag: { fontSize: 11, fontWeight: '800', color: colors.aretePurple, letterSpacing: 1 },
   challengeTitle: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
   challengeDesc: { fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 16 },
+  challengeUsers: { fontSize: 11, fontWeight: '700', color: colors.aretePurple, marginTop: 6 },
   challengeProgressBg: {
-    height: 10,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderRadius: 5,
-    overflow: 'hidden',
-    marginTop: 10,
+    height: 10, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 5,
+    overflow: 'hidden', marginTop: 10,
   },
   challengeProgressFill: { height: '100%', backgroundColor: colors.aretePurple, borderRadius: 5 },
-  challengeNumbers: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 4,
-  },
+  challengeNumbers: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
   challengeCount: { fontSize: 12, fontWeight: '800', color: colors.aretePurple },
   challengeGoal: { fontSize: 12, color: colors.textMuted },
+
   legendRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingHorizontal: 4,
+    flexDirection: 'row', justifyContent: 'space-between',
+    marginBottom: 12, paddingHorizontal: 4,
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary },
+
   leaderboardBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 10,
-    borderWidth: 2,
-    borderColor: colors.sandBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 22, padding: 10,
+    borderWidth: 2, borderColor: colors.sandBorder,
+  },
+  leaderboardHeader: {
+    paddingVertical: 8, paddingHorizontal: 4,
+    borderBottomWidth: 1, borderBottomColor: colors.sandBorder,
+    marginBottom: 8,
+  },
+  leaderboardHeaderText: {
+    fontSize: 13, fontWeight: '800', color: colors.textSecondary, textAlign: 'center',
   },
   userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    marginBottom: 6,
-    backgroundColor: '#FFFFFF',
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 12,
+    paddingHorizontal: 12, borderRadius: 14, marginBottom: 6, backgroundColor: '#FFFFFF',
   },
-  currentUserRow: {
-    backgroundColor: colors.solLight,
-    borderWidth: 2,
-    borderColor: colors.solGold,
-  },
+  currentUserRow: { backgroundColor: colors.solLight, borderWidth: 2, borderColor: colors.solGold },
   promotionBorder: { borderLeftWidth: 4, borderLeftColor: colors.successGreen },
   demotionBorder: { borderLeftWidth: 4, borderLeftColor: colors.errorRed },
   rankBadge: { width: 28, alignItems: 'center' },
   rankText: { fontSize: 16, fontWeight: '900', color: colors.textSecondary },
   avatarCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.sandBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-    marginRight: 10,
+    width: 36, height: 36, borderRadius: 18, backgroundColor: colors.sandBackground,
+    justifyContent: 'center', alignItems: 'center', marginLeft: 8, marginRight: 10,
   },
   userName: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.textPrimary },
   userNameActive: { color: colors.terracotaDark, fontWeight: '900' },
-  scorePill: {
-    backgroundColor: colors.sandBackground,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
+  scorePill: { backgroundColor: colors.sandBackground, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   scoreText: { fontSize: 13, fontWeight: '800', color: colors.monteDark },
+
+  emptyBox: { padding: 40, alignItems: 'center' },
+  emptyText: { fontSize: 14, fontWeight: '700', color: colors.textSecondary },
+  emptySubtext: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
+
+  footerText: {
+    textAlign: 'center', fontSize: 11, color: colors.textMuted,
+    marginTop: 16, fontStyle: 'italic',
+  },
 });
