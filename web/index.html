@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GuaraniApp — Aprende Guaraní Oriental Boliviano</title>
+<style>
+:root{
+  --monte:#2D6A4F; --monte-dark:#1E5E3A; --monte-light:#52B788;
+  --terra:#D97736; --terra-dark:#9E3D1B;
+  --sol:#F4A261; --sol-gold:#E9C46A;
+  --sand:#FFF8F0; --card:#FFFFFF; --border:#E6D7C3; --text:#3A2E22; --muted:#8A7A66;
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --sand:#1C1712; --card:#241E17; --border:#3A2E22; --text:#F2E9DD; --muted:#B7A896; }
+}
+:root[data-theme="dark"]{ --sand:#1C1712; --card:#241E17; --border:#3A2E22; --text:#F2E9DD; --muted:#B7A896; }
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth; scroll-padding-top: calc(72px + env(safe-area-inset-top,0px));}
+body{
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background:var(--sand); color:var(--text);
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+img{max-width:100%; display:block;}
+a{color:inherit;}
+.container{max-width:1120px; margin:0 auto; padding:0 24px;}
+
+/* NAV */
+header{
+  position:sticky; top:0; z-index:50; background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding-top:env(safe-area-inset-top,0px);
+}
+nav{display:flex; align-items:center; justify-content:space-between; padding:14px 24px; max-width:1120px; margin:0 auto;}
+.brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.25rem; color:var(--monte-dark);}
+.brand-badge{width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--terra),var(--sol)); display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;}
+.navlinks{display:flex; gap:22px; list-style:none; font-weight:600; font-size:.95rem;}
+.navlinks a{text-decoration:none; opacity:.85;}
+.navlinks a:hover{opacity:1; color:var(--terra);}
+.burger{display:none; flex-direction:column; gap:4px; background:none; border:none; cursor:pointer; padding:8px;}
+.burger span{width:22px; height:2px; background:var(--text);}
+@media (max-width:760px){
+  .navlinks{position:absolute; top:100%; left:0; right:0; background:var(--card); flex-direction:column; padding:16px 24px; border-bottom:1px solid var(--border); display:none; gap:14px;}
+  .navlinks.open{display:flex;}
+  .burger{display:flex;}
+}
+
+/* HERO */
+.hero{padding:64px 0 56px; overflow-x:auto;}
+.hero-inner{display:flex; align-items:center; gap:40px; flex-wrap:wrap;}
+.hero-text{flex:1 1 380px; min-width:0;}
+.eyebrow{color:var(--terra); font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-size:.8rem;}
+h1{font-size:clamp(2rem,5vw,3rem); line-height:1.15; margin:12px 0 16px; color:var(--monte-dark);}
+:root[data-theme="dark"] h1, @media (prefers-color-scheme:dark){h1{color:var(--sol-gold);}}
+.lead{color:var(--muted); font-size:1.1rem; margin-bottom:26px; max-width:52ch;}
+.cta-row{display:flex; gap:14px; flex-wrap:wrap;}
+.btn{display:inline-block; padding:13px 26px; border-radius:999px; font-weight:700; text-decoration:none; font-size:.95rem; transition:transform .15s;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--terra); color:#fff;}
+.btn-ghost{background:transparent; color:var(--monte-dark); border:2px solid var(--monte);}
+:root[data-theme="dark"] .btn-ghost{color:var(--sol-gold); border-color:var(--sol-gold);}
+.hero-visual{flex:1 1 280px; min-width:0; display:flex; justify-content:center;}
+.mascot-card{width:min(280px,80vw); aspect-ratio:1; border-radius:32px; background:linear-gradient(160deg,var(--monte),var(--monte-dark)); display:flex; align-items:center; justify-content:center; font-size:6rem; box-shadow:0 20px 40px -12px rgba(0,0,0,.25);}
+
+/* SECTION GENERIC */
+section{padding:60px 0;}
+.section-head{text-align:center; max-width:620px; margin:0 auto 40px;}
+.section-head .eyebrow{display:block; margin-bottom:8px;}
+h2{font-size:clamp(1.5rem,3.5vw,2.1rem); color:var(--monte-dark); margin-bottom:10px;}
+:root[data-theme="dark"] h2{color:var(--sol-gold);}
+.section-head p{color:var(--muted);}
+.alt-bg{background:var(--card); border-top:1px solid var(--border); border-bottom:1px solid var(--border);}
+
+/* SOBRE LA MARCA */
+.about-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:22px;}
+@media(max-width:760px){.about-grid{grid-template-columns:1fr;}}
+.value-card{background:var(--card); border:1px solid var(--border); border-radius:18px; padding:26px; text-align:center;}
+.value-card .ic{font-size:2rem; margin-bottom:10px;}
+.value-card h3{font-size:1.05rem; margin-bottom:8px; color:var(--monte-dark);}
+:root[data-theme="dark"] .value-card h3{color:var(--sol-gold);}
+.value-card p{color:var(--muted); font-size:.92rem; line-height:1.5;}
+
+/* CARACTERISTICAS */
+.feat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:20px;}
+.feat-card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:22px;}
+.feat-card .ic{width:44px; height:44px; border-radius:12px; background:var(--terra); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:14px;}
+.feat-card h3{font-size:1rem; margin-bottom:6px;}
+.feat-card p{color:var(--muted); font-size:.88rem; line-height:1.5;}
+
+/* PRODUCTO */
+.product-wrap{display:flex; gap:40px; align-items:center; flex-wrap:wrap;}
+.product-text{flex:1 1 340px; min-width:0;}
+.product-text ul{margin:18px 0; padding-left:0; list-style:none;}
+.product-text li{padding:8px 0 8px 30px; position:relative; color:var(--muted);}
+.product-text li::before{content:"✓"; position:absolute; left:0; color:var(--monte); font-weight:800;}
+.phone-mock{flex:1 1 260px; min-width:0; display:flex; justify-content:center;}
+.phone{width:min(240px,70vw); aspect-ratio:9/18; background:var(--card); border:6px solid var(--monte-dark); border-radius:34px; padding:16px 12px; display:flex; flex-direction:column; gap:10px; box-shadow:0 20px 40px -14px rgba(0,0,0,.3);}
+.phone .bar{height:10px; border-radius:6px; background:var(--border);}
+.phone .bar.short{width:60%;}
+.phone .row{display:flex; gap:8px;}
+.phone .chip{flex:1; aspect-ratio:1; border-radius:50%; background:var(--sol);}
+.phone .chip:nth-child(2){background:var(--monte-light);}
+.phone .chip:nth-child(3){background:var(--terra);}
+
+/* CONTACTO */
+.contact-wrap{display:grid; grid-template-columns:1fr 1fr; gap:40px;}
+@media(max-width:760px){.contact-wrap{grid-template-columns:1fr;}}
+form{display:flex; flex-direction:column; gap:14px;}
+input,textarea{padding:13px 14px; border-radius:10px; border:1px solid var(--border); background:var(--sand); color:var(--text); font-family:inherit; font-size:.95rem;}
+textarea{min-height:110px; resize:vertical;}
+.contact-info p{color:var(--muted); margin-bottom:18px; line-height:1.6;}
+.social-row{display:flex; gap:12px; margin-top:8px;}
+.social-row a{width:42px; height:42px; border-radius:50%; background:var(--monte); color:#fff; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:1.1rem;}
+.social-row a:hover{background:var(--terra);}
+#form-status{font-size:.88rem; color:var(--monte); min-height:1.2em;}
+
+/* FOOTER / SITEMAP */
+footer{background:var(--monte-dark); color:#EDE6D8; padding:44px 0 26px;}
+.foot-grid{display:grid; grid-template-columns:2fr 1fr 1fr; gap:30px; margin-bottom:28px;}
+@media(max-width:640px){.foot-grid{grid-template-columns:1fr;}}
+footer h4{font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; color:var(--sol-gold);}
+footer ul{list-style:none;}
+footer li{margin-bottom:8px; font-size:.9rem;}
+footer li a{text-decoration:none; opacity:.85;}
+footer li a:hover{opacity:1;}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.15); padding-top:18px; font-size:.82rem; opacity:.75; text-align:center;}
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="brand"><span class="brand-badge">🦊</span>GuaraniApp</div>
+    <ul class="navlinks" id="navlinks">
+      <li><a href="#inicio">Inicio</a></li>
+      <li><a href="#marca">Sobre la marca</a></li>
+      <li><a href="#producto">Producto</a></li>
+      <li><a href="#caracteristicas">Características</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <button class="burger" id="burger" aria-label="Abrir menú"><span></span><span></span><span></span></button>
+  </nav>
+</header>
+
+<section class="hero" id="inicio">
+  <div class="container hero-inner">
+    <div class="hero-text">
+      <span class="eyebrow">Ñe'ẽ Guaraní · Oriente Boliviano</span>
+      <h1>Aprende Guaraní Oriental Boliviano con Aguará</h1>
+      <p class="lead">Una app móvil gamificada que enseña la lengua y la cultura Ava, Izoceña y Simba del Chaco boliviano, lección a lección, con un zorro chaqueño como guía.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#contacto">Descargar la app</a>
+        <a class="btn btn-ghost" href="#producto">Ver cómo funciona</a>
+      </div>
+    </div>
+    <div class="hero-visual"><div class="mascot-card">🦊</div></div>
+  </div>
+</section>
+
+<section class="alt-bg" id="marca">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Sobre la marca</span>
+      <h2>Ñandereko: nuestro buen vivir</h2>
+      <p>GuaraniApp nace para que el Guaraní Oriental Boliviano se aprenda con la misma cercanía con la que se transmite de generación en generación: contando, cantando y conversando.</p>
+    </div>
+    <div class="about-grid">
+      <div class="value-card"><div class="ic">🌿</div><h3>Cultura viva</h3><p>Cada lección incluye una cápsula cultural real: saludos, animales del monte, familia y numeración tradicional.</p></div>
+      <div class="value-card"><div class="ic">🎯</div><h3>Aprendizaje guiado</h3><p>Antes de cada lección, un tutorial breve enseña las palabras clave, para que nadie empiece desde cero.</p></div>
+      <div class="value-card"><div class="ic">🤝</div><h3>Comunidad</h3><p>Ligas, rachas y logros para aprender en compañía, no en soledad, tal como se aprende en el Tëta.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="producto">
+  <div class="container product-wrap">
+    <div class="product-text">
+      <span class="eyebrow">Producto</span>
+      <h2>Una app, cuatro formas de aprender</h2>
+      <ul>
+        <li>Sendero de unidades con lecciones cortas y progresivas</li>
+        <li>Traductor Español–Guaraní asistido por inteligencia artificial</li>
+        <li>Historias culturales interactivas del Chaco boliviano</li>
+        <li>Tienda, ligas y logros para mantener la motivación</li>
+      </ul>
+      <a class="btn btn-primary" href="#contacto">Quiero probarla</a>
+    </div>
+    <div class="phone-mock">
+      <div class="phone">
+        <div class="bar short"></div>
+        <div class="bar"></div>
+        <div class="row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div>
+        <div class="bar"></div>
+        <div class="bar short"></div>
+        <div class="bar"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt-bg" id="caracteristicas">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Características</span>
+      <h2>Pensada para aprender de verdad</h2>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card"><div class="ic">📖</div><h3>Lecciones gamificadas</h3><p>Ejercicios de selección, audio y escritura con teclado guaraní especial.</p></div>
+      <div class="feat-card"><div class="ic">🔤</div><h3>Traductor con IA</h3><p>Traduce frases del español al guaraní y viceversa al instante.</p></div>
+      <div class="feat-card"><div class="ic">🏆</div><h3>Ligas y rachas</h3><p>Compite sanamente y mantén tu constancia día a día.</p></div>
+      <div class="feat-card"><div class="ic">🎨</div><h3>Tienda de mascota</h3><p>Personaliza a Aguará con accesorios ganados aprendiendo.</p></div>
+      <div class="feat-card"><div class="ic">📚</div><h3>Historias culturales</h3><p>Relatos del Chaco boliviano con preguntas de comprensión.</p></div>
+      <div class="feat-card"><div class="ic">📱</div><h3>Multiplataforma</h3><p>Disponible en Android, iOS y web desde un mismo código.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="contacto">
+  <div class="container contact-wrap">
+    <div>
+      <span class="eyebrow">Contacto</span>
+      <h2 style="margin-bottom:16px;">Hablemos</h2>
+      <form id="contact-form">
+        <input type="text" placeholder="Tu nombre" required>
+        <input type="email" placeholder="Tu correo" required>
+        <textarea placeholder="Tu mensaje"></textarea>
+        <button class="btn btn-primary" type="submit">Enviar mensaje</button>
+        <span id="form-status"></span>
+      </form>
+    </div>
+    <div class="contact-info">
+      <p><strong>GuaraniApp</strong><br>Proyecto académico de aplicación móvil híbrida.<br>Oriente Boliviano — Región del Chaco.</p>
+      <p>correo@guaraniapp.example · +591 000 00000</p>
+      <div class="social-row">
+        <a href="#" aria-label="Facebook">📘</a>
+        <a href="#" aria-label="Instagram">📸</a>
+        <a href="#" aria-label="YouTube">▶️</a>
+        <a href="#" aria-label="GitHub">💻</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="foot-grid">
+      <div>
+        <div class="brand" style="color:#fff;"><span class="brand-badge">🦊</span>GuaraniApp</div>
+        <p style="opacity:.8; font-size:.88rem; margin-top:10px; max-width:32ch;">Aprende Guaraní Oriental Boliviano jugando, con la mascota Aguará como guía.</p>
+      </div>
+      <div>
+        <h4>Mapa del sitio</h4>
+        <ul>
+          <li><a href="#inicio">Inicio</a></li>
+          <li><a href="#marca">Sobre la marca</a></li>
+          <li><a href="#producto">Producto</a></li>
+          <li><a href="#caracteristicas">Características</a></li>
+          <li><a href="#contacto">Contacto</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Enlaces externos</h4>
+        <ul>
+          <li><a href="https://github.com" target="_blank" rel="noopener">Repositorio en GitHub</a></li>
+          <li><a href="#" target="_blank" rel="noopener">Tienda de apps (próximamente)</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">© 2026 GuaraniApp — Proyecto académico. Todos los derechos reservados.</div>
+  </div>
+</footer>
+
+<script>
+const burger = document.getElementById('burger');
+const navlinks = document.getElementById('navlinks');
+burger.addEventListener('click', () => navlinks.classList.toggle('open'));
+navlinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navlinks.classList.remove('open')));
+
+document.getElementById('contact-form').addEventListener('submit', function(e){
+  e.preventDefault();
+  document.getElementById('form-status').textContent = '¡Gracias! Tu mensaje quedó registrado (demo sin envío real).';
+  this.reset();
+});
+</script>
+</body>
+</html>S
