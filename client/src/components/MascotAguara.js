@@ -16,6 +16,7 @@ export default function MascotAguara({
 
   return (
     <View style={styles.container}>
+      {/* Burbuja de diálogo */}
       {speechText && (
         <View style={styles.bubbleContainer}>
           <View style={styles.speechBubble}>
@@ -25,6 +26,7 @@ export default function MascotAguara({
         </View>
       )}
 
+      {/* Círculo con la imagen del Aguara */}
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={onPress}
@@ -36,17 +38,20 @@ export default function MascotAguara({
       >
         <Image
           source={imageSource}
-          style={[styles.mascotImage, { width: size, height: size, borderRadius: size / 2 }]}
-          resizeMode="cover"
+          style={[
+            styles.mascotImage,
+            { width: size, height: size }
+          ]}
+          resizeMode="contain"
         />
-
-        {/* Traditional Hat Indicator Badge */}
-        {showEquipped && (
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>🦊 Aguará</Text>
-          </View>
-        )}
       </TouchableOpacity>
+
+      {/* Badge "Aguará" DEBAJO del círculo */}
+      {showEquipped && (
+        <View style={styles.badgeContainer}>
+          <Text style={styles.badgeText}>🦊 Aguará</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -67,7 +72,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 6,
-    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mascotImage: {
     width: '100%',
@@ -108,20 +114,27 @@ const styles = StyleSheet.create({
     borderTopColor: colors.sandBorder,
     marginTop: -1,
   },
+
+  // 🎯 Badge FUERA del círculo, justo debajo
   badgeContainer: {
-    position: 'absolute',
-    bottom: 4,
-    alignSelf: 'center',
+    marginTop: -10,       // Se superpone ligeramente al círculo para verse bien
     backgroundColor: colors.montePrimary,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 10,
   },
   badgeText: {
     color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: 'bold',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.3,
   },
 });

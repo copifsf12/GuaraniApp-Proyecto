@@ -102,6 +102,12 @@ export const AppProvider = ({ children }) => {
     simplifiedUI: false
   });
 
+  // 🎯 NUEVA FUNCIÓN: Cambiar tab y resetear pantalla a 'main'
+  const handleSetActiveTab = (tabKey) => {
+    setActiveTab(tabKey);
+    setCurrentScreen('main'); // 👈 ESTO ES CLAVE
+  };
+
   useEffect(() => {
     (async () => {
       if (!sessionStorage || typeof sessionStorage.loadSession !== 'function') {
@@ -295,7 +301,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // 🎯 REGISTRO CON AUTO-LOGIN + WELCOME
   const register = async ({
     email, password, username, dialect_variant, age_group, daily_goal_minutes
   }) => {
@@ -306,7 +311,6 @@ export const AppProvider = ({ children }) => {
         email, password, username, dialect_variant, age_group, daily_goal_minutes
       });
 
-      // 🎯 Si el backend devolvió sesión válida → auto-login
       if (data.session?.access_token && data.autoLoggedIn) {
         console.log('🎯 Auto-login después de registrar');
 
@@ -319,14 +323,12 @@ export const AppProvider = ({ children }) => {
 
         await loadAllContent(data.session.access_token);
 
-        // Aplicar diagnóstico si existe
         if (onboardingDraft?.levelChoice && onboardingDraft.levelChoice !== 'fresh') {
           console.log(`🎯 Aplicando diagnóstico: ${onboardingDraft.levelChoice}`);
           await applyDiagnosticSkips(data.session.access_token, onboardingDraft.levelChoice);
           await loadAllContent(data.session.access_token);
         }
 
-        // 🎯 IR A WELCOME (pantalla de bienvenida)
         setCurrentScreen('welcome');
 
         return {
@@ -371,7 +373,6 @@ export const AppProvider = ({ children }) => {
         await loadAllContent(data.session.access_token);
       }
 
-      // 🎯 IR A WELCOME (pantalla de bienvenida)
       setCurrentScreen('welcome');
       return data;
     } catch (e) {
@@ -762,7 +763,7 @@ export const AppProvider = ({ children }) => {
         currentScreen,
         setCurrentScreen,
         activeTab,
-        setActiveTab,
+        setActiveTab: handleSetActiveTab, // 👈 CAMBIO AQUÍ
         onboardingDraft,
         setOnboardingDraft,
         user,

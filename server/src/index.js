@@ -4,7 +4,6 @@ const cors = require('cors');
 const apiRoutes = require('./routes/api');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
@@ -35,7 +34,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Error handling middleware (Foolproof)
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error en servidor Express:', err);
   res.status(500).json({
@@ -45,10 +44,17 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`====================================================`);
-  console.log(`🚀 GuaraniApp Backend escuchando en http://localhost:${PORT}`);
-  console.log(`🦊 Mascota activa: Aguará (Zorro Chaqueño con sombrero de saó)`);
-  console.log(`🌿 Cultura: Guaraní Oriental Boliviano (Ava, Izoceño, Simba)`);
-  console.log(`====================================================`);
-});
+// 🎯 Solo escucha en local, Vercel usa serverless
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`====================================================`);
+    console.log(`🚀 GuaraniApp Backend escuchando en http://localhost:${PORT}`);
+    console.log(`🦊 Mascota activa: Aguará`);
+    console.log(`🌿 Cultura: Guaraní Oriental Boliviano`);
+    console.log(`====================================================`);
+  });
+}
+
+// 🎯 Export para Vercel (serverless)
+module.exports = app;

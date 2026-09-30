@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 import { useApp } from '../context/AppContext';
 
 export default function BottomNavBar() {
   const { activeTab, setActiveTab } = useApp();
+  const { theme, isDark } = useTheme();
 
   const tabs = [
     { key: 'learn', label: 'Aprender', icon: 'map', outlineIcon: 'map-outline' },
@@ -17,9 +18,22 @@ export default function BottomNavBar() {
   ];
 
   return (
-    <View style={styles.navBar}>
+    <View style={[
+      styles.navBar,
+      {
+        backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF',
+        borderTopColor: isDark ? '#333333' : theme.sandBorder,
+      }
+    ]}>
       {tabs.map(tab => {
         const isActive = activeTab === tab.key;
+
+        // Colores dinámicos según el tema
+        const activeIconColor = isDark ? '#95D5B2' : theme.montePrimary;
+        const activeLabelColor = isDark ? '#95D5B2' : theme.monteDark;
+        const inactiveColor = isDark ? '#757575' : theme.textMuted;
+        const activeWrapperBg = isDark ? '#1B4332' : theme.montePastel;
+
         return (
           <TouchableOpacity
             key={tab.key}
@@ -27,17 +41,20 @@ export default function BottomNavBar() {
             onPress={() => setActiveTab(tab.key)}
             activeOpacity={0.7}
           >
-            <View style={[styles.iconWrapper, isActive && styles.iconWrapperActive]}>
+            <View style={[
+              styles.iconWrapper,
+              isActive && { backgroundColor: activeWrapperBg, ...styles.iconWrapperActive }
+            ]}>
               <Ionicons
                 name={isActive ? tab.icon : tab.outlineIcon}
                 size={22}
-                color={isActive ? colors.montePrimary : colors.textMuted}
+                color={isActive ? activeIconColor : inactiveColor}
               />
             </View>
             <Text
               style={[
                 styles.tabLabel,
-                { color: isActive ? colors.monteDark : colors.textMuted },
+                { color: isActive ? activeLabelColor : inactiveColor },
                 isActive && styles.tabLabelActive
               ]}
             >
@@ -53,9 +70,7 @@ export default function BottomNavBar() {
 const styles = StyleSheet.create({
   navBar: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
     borderTopWidth: 2,
-    borderTopColor: colors.sandBorder,
     paddingVertical: 8,
     paddingHorizontal: 12,
     justifyContent: 'space-around',
@@ -79,7 +94,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   iconWrapperActive: {
-    backgroundColor: colors.montePastel,
+    // El backgroundColor se aplica dinámicamente
   },
   tabLabel: {
     fontSize: 10,
