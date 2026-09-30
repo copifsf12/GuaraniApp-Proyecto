@@ -1,28 +1,40 @@
 {
   "expo": {
-    "name": "GuaraniApp",
+    "name": "Ava Guaraní",
     "slug": "guaraniapp-oriente-boliviano",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/aguara_mascot.jpg",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/images/aguara_mascot.jpg",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFF8F0"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Ava Guaraní necesita acceso a tu cámara para tu foto de perfil.",
+        "NSPhotoLibraryUsageDescription": "Ava Guaraní necesita acceso a tus fotos para tu perfil."
+      }
     },
     "android": {
+      "package": "com.navia10.guaraniapp",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/aguara_mascot.jpg",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFF8F0"
-      },
-      "package": "com.navia10.guaraniapp"
+      }
     },
     "web": {
-      "favicon": "./assets/images/aguara_mascot.jpg",
+      "favicon": "./assets/images/favicon.png",
       "bundler": "metro"
     },
     "extra": {
@@ -31,7 +43,14 @@
       }
     },
     "plugins": [
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite a Ava Guaraní acceder a tus fotos para personalizar tu perfil.",
+          "cameraPermission": "Permite a Ava Guaraní usar tu cámara para tomar tu foto de perfil."
+        }
+      ]
     ]
   }
 }
