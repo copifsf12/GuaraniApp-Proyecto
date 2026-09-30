@@ -104,6 +104,7 @@ export default function ShopScreen() {
   const heartsMax = user?.maxHearts || 5;
   const heartsMissing = heartsMax - heartsFilled;
   const isFull = heartsMissing <= 0;
+  const packs = mbaePacks || []; // 🎯 FIX: protección
 
   return (
     <SafeAreaView style={styles.container}>
@@ -217,8 +218,7 @@ export default function ShopScreen() {
         </Text>
 
         <View style={styles.mbaeGrid}>
-          {/* 🎯 FIX: protección con || [] por si mbaePacks está undefined */}
-          {(mbaePacks || []).map(pack => (
+          {packs.map(pack => (
             <View
               key={pack.id}
               style={[

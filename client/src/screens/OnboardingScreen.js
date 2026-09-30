@@ -22,8 +22,6 @@ export default function OnboardingScreen() {
   const [selectedVariant, setSelectedVariant] = useState(onboardingDraft.dialectVariant);
   const [selectedAge, setSelectedAge] = useState(onboardingDraft.ageGroup);
   const [selectedGoal, setSelectedGoal] = useState('regular');
-
-  // 🎯 NUEVO: modal de diagnóstico
   const [showQuiz, setShowQuiz] = useState(false);
 
   const handleFinishOnboarding = (levelChoice) => {
@@ -36,9 +34,7 @@ export default function OnboardingScreen() {
     setCurrentScreen('auth');
   };
 
-  // 🎯 NUEVO: al terminar el quiz
   const handleQuizFinish = (score) => {
-    // Determinar unidad según el score
     let levelChoice = 'fresh';
     if (score === 5) levelChoice = 'unit3';
     else if (score === 4) levelChoice = 'unit2';
@@ -48,9 +44,7 @@ export default function OnboardingScreen() {
     handleFinishOnboarding(levelChoice);
   };
 
-  // -------------------------------------------------------------
-  // STEP 0: WELCOME SCREEN
-  // -------------------------------------------------------------
+  // STEP 0: WELCOME
   if (step === 0) {
     return (
       <OnboardingBackground style={styles.container}>
@@ -91,9 +85,7 @@ export default function OnboardingScreen() {
     );
   }
 
-  // -------------------------------------------------------------
-  // STEP 1: SELECT DIALECT VARIANT
-  // -------------------------------------------------------------
+  // STEP 1: DIALECT VARIANT
   if (step === 1) {
     return (
       <OnboardingBackground style={styles.container}>
@@ -160,9 +152,7 @@ export default function OnboardingScreen() {
     );
   }
 
-  // -------------------------------------------------------------
-  // STEP 2: SELECT AGE GROUP
-  // -------------------------------------------------------------
+  // STEP 2: AGE GROUP
   if (step === 2) {
     return (
       <OnboardingBackground style={styles.container}>
@@ -223,9 +213,7 @@ export default function OnboardingScreen() {
     );
   }
 
-  // -------------------------------------------------------------
-  // STEP 3: SELECT DAILY GOAL
-  // -------------------------------------------------------------
+  // STEP 3: DAILY GOAL
   if (step === 3) {
     return (
       <OnboardingBackground style={styles.container}>
@@ -286,9 +274,7 @@ export default function OnboardingScreen() {
     );
   }
 
-  // -------------------------------------------------------------
   // STEP 4: LEVEL CHOICE
-  // -------------------------------------------------------------
   return (
     <OnboardingBackground style={styles.container}>
       <View style={styles.stepHeader}>
@@ -304,7 +290,6 @@ export default function OnboardingScreen() {
           speechText="¡Excelente elección! ¿Cómo prefieres comenzar tu viaje?"
         />
 
-        {/* Botón: Empezar desde cero */}
         <TouchableOpacity
           style={styles.levelCard}
           onPress={() => handleFinishOnboarding('fresh')}
@@ -322,7 +307,6 @@ export default function OnboardingScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.monteDark} />
         </TouchableOpacity>
 
-        {/* 🎯 Botón: Prueba de Diagnóstico (AHORA ABRE EL MODAL) */}
         <TouchableOpacity
           style={styles.levelCard}
           onPress={() => setShowQuiz(true)}
@@ -341,7 +325,6 @@ export default function OnboardingScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* 🎯 Modal del cuestionario */}
       <DiagnosticQuizModal
         visible={showQuiz}
         onClose={() => setShowQuiz(false)}

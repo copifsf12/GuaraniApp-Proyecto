@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Modal,
-  TouchableOpacity
+  TouchableOpacity,
+  Animated,
+  Easing
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,6 +41,12 @@ export default function LessonCompleteScreen() {
   } = useApp();
   const [achievementModalVisible, setAchievementModalVisible] = useState(false);
 
+  // 🎬 Animaciones
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const badgeScale = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
   const xpGained = lastLessonResult?.xpGained ?? 15;
   const coinsGained = lastLessonResult?.coinsGained ?? 10;
   const accuracy = lastLessonResult?.accuracy ?? 100;
@@ -51,6 +59,56 @@ export default function LessonCompleteScreen() {
 
   const shouldCelebrate = accuracy >= 70;
 
+  // 🎬 Animación de rebote del zorro
+  useEffect(() => {
+    if (!shouldCelebrate) return;
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: -12, duration: 500,
+          easing: Easing.out(Easing.quad), useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0, duration: 500,
+          easing: Easing.bounce, useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [shouldCelebrate]);
+
+  // 🎬 Animación flotante para emojis
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: 1, duration: 2000,
+          easing: Easing.inOut(Easing.sin), useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0, duration: 2000,
+          easing: Easing.inOut(Easing.sin), useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  // 🎬 Entrada del badge con bounce
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(badgeScale, {
+        toValue: 1.15, duration: 400,
+        easing: Easing.out(Easing.back(2)), useNativeDriver: true,
+      }),
+      Animated.spring(badgeScale, {
+        toValue: 1, friction: 4, useNativeDriver: true,
+      }),
+    ]).start();
+
+    Animated.timing(fadeAnim, {
+      toValue: 1, duration: 600, useNativeDriver: true,
+    }).start();
+  }, []);
+
   // 🏆 Mostrar popup si se desbloquearon logros
   useEffect(() => {
     if (newAchievements.length > 0) {
@@ -61,35 +119,77 @@ export default function LessonCompleteScreen() {
     }
   }, [newAchievements.length]);
 
+  // 🦊 Mensaje dinámico según precisión
+  const getFoxMessage = () => {
+    if (!shouldCelebrate) return '¡Ani ñembyasy! Cada intento te acerca a la sabiduría.';
+    if (accuracy === 100) return '🏆 ¡PERFECTO! Eres un maestro del guaraní.';
+    if (accuracy >= 90) return '⭐ ¡Excelente trabajo! Che irũ.';
+    if (accuracy >= 80) return '🌟 ¡Muy bien! Estás avanzando con fuerza.';
+    return '👍 ¡Buen esfuerzo! Sigue así.';
+  };
+
+  const getSubtitle = () => {
+    if (accuracy >= 90) return '¡Desempeño sobresaliente! Estás dominando el Chaco.';
+    if (accuracy >= 70) return '¡Buen trabajo! Cada error es un paso en el aprendizaje.';
+    return '¡Sigue practicando! La sabiduría se forja con constancia.';
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* 🎊 Confeti solo si celebra */}
       {shouldCelebrate && <Confetti />}
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.festiveBadge}>
-          <Text style={styles.festiveBadgeText}>
-            {shouldCelebrate ? '¡LECCIÓN COMPLETADA!' : '¡CASI LO LOGRAS!'}
-          </Text>
-        </View>
+      {/* 🎊 Emojis flotantes decorativos */}
+      {shouldCelebrate && (
+        <>
+          <Animated.Text style={[styles.floatingEmoji, styles.emoji1, {
+            transform: [{ translateY: floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -15] }) }]
+          }]}>🎊</Animated.Text>
+          <Animated.Text style={[styles.floatingEmoji, styles.emoji2, {
+            transform: [{ translateY: floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 15] }) }]
+          }]}>🎉</Animated.Text>
+          <Animated.Text style={[styles.floatingEmoji, styles.emoji3, {
+            transform: [{ translateY: floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -10] }) }]
+          }]}>⭐</Animated.Text>
+          <Animated.Text style={[styles.floatingEmoji, styles.emoji4, {
+            transform: [{ translateY: floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] }) }]
+          }]}>🏆</Animated.Text>
+        </>
+      )}
 
-        <MascotAguara
-          size={150}
-          mood={shouldCelebrate ? 'celebrating' : 'happy'}
-          speechText={
-            shouldCelebrate
-              ? '¡Iporãiterei! Tu constancia enriquece la lengua guaraní.'
-              : '¡Ani ñembyasy! Cada intento te acerca a la sabiduría.'
-          }
-        />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* 🎊 Badge festivo con animación */}
+        <Animated.View style={[
+          styles.festiveBadge,
+          shouldCelebrate && styles.festiveBadgeCelebrate,
+          { transform: [{ scale: badgeScale }] }
+        ]}>
+          <Text style={[
+            styles.festiveBadgeText,
+            shouldCelebrate && styles.festiveBadgeTextCelebrate
+          ]}>
+            {shouldCelebrate ? '🎉 ¡FELICIDADES! 🎉' : '¡CASI LO LOGRAS!'}
+          </Text>
+        </Animated.View>
+
+        {/* 🦊 Zorro con bounce */}
+        <Animated.View style={{ transform: [{ translateY: bounceAnim }] }}>
+          <MascotAguara
+            size={150}
+            mood={shouldCelebrate ? 'celebrating' : 'happy'}
+            speechText={getFoxMessage()}
+          />
+        </Animated.View>
+
+        {/* 💬 Mensaje guaraní extra si es celebración */}
+        {shouldCelebrate && (
+          <Animated.View style={[styles.guaraniBubble, { opacity: fadeAnim }]}>
+            <Text style={styles.guaraniText}>¡Iporãiterei! ¡Felicidades! Che irũ</Text>
+          </Animated.View>
+        )}
 
         <Text style={styles.titleText}>Resumen de Rendimiento</Text>
-        <Text style={styles.subtitleText}>
-          {accuracy >= 90
-            ? '¡Desempeño sobresaliente! Estás dominando el Chaco.'
-            : accuracy >= 70
-            ? '¡Buen trabajo! Cada error es un paso en el aprendizaje.'
-            : '¡Sigue practicando! La sabiduría se forja con constancia.'}
-        </Text>
+        <Text style={styles.subtitleText}>{getSubtitle()}</Text>
 
         <View style={styles.metricsGrid}>
           <View style={styles.metricCard}>
@@ -225,6 +325,8 @@ export default function LessonCompleteScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sandBackground },
   scrollContent: { padding: 24, paddingBottom: 40, alignItems: 'center' },
+
+  // 🎊 Badge festivo
   festiveBadge: {
     backgroundColor: colors.montePastel,
     paddingHorizontal: 16,
@@ -234,9 +336,45 @@ const styles = StyleSheet.create({
     borderColor: colors.montePrimary,
     marginBottom: 8,
   },
+  festiveBadgeCelebrate: {
+    backgroundColor: colors.solGold,
+    borderColor: '#D4AF37',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 24,
+    shadowColor: colors.solGold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 6,
+  },
   festiveBadgeText: {
     fontSize: 12, fontWeight: '800', color: colors.monteDark, letterSpacing: 1,
   },
+  festiveBadgeTextCelebrate: {
+    fontSize: 18, fontWeight: '900', color: '#FFFFFF', letterSpacing: 1.5,
+  },
+
+  // 💬 Bocadillo guaraní
+  guaraniBubble: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: colors.solGold,
+    marginTop: 8,
+    marginBottom: 4,
+    maxWidth: '90%',
+  },
+  guaraniText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.terracotaDark,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+
   titleText: {
     fontSize: 26, fontWeight: '900', color: colors.terracotaDark,
     textAlign: 'center', marginTop: 10,
@@ -291,6 +429,17 @@ const styles = StyleSheet.create({
   secondaryBtnText: {
     color: colors.textSecondary, fontWeight: '700', fontSize: 14, textDecorationLine: 'underline',
   },
+
+  // 🎊 Emojis flotantes
+  floatingEmoji: {
+    position: 'absolute',
+    fontSize: 30,
+    zIndex: 1,
+  },
+  emoji1: { top: '8%', left: '6%' },
+  emoji2: { top: '12%', right: '6%' },
+  emoji3: { bottom: '35%', left: '8%' },
+  emoji4: { bottom: '30%', right: '8%' },
 
   // 🏆 Modal de logro
   modalBackdrop: {

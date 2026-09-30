@@ -686,26 +686,26 @@ export const LOCAL_EXERCISES = {
         { id: 'b1', text: 'Peteĩ' },
         { id: 'b2', text: 'mokõi' },
         { id: 'b3', text: 'mbohapy' },
-        { id: 'b4', text: 'sy' }
+        { id: 'b4', text: 'irundy' }
       ],
-      explanation: 'Peteĩ=1, Mokõi=2, Mbohapy=3.',
-      cultural_fact: 'Contar es memorizar la lengua.'
+      explanation: 'Peteĩ = 1, Mokõi = 2, Mbohapy = 3.',
+      cultural_fact: 'Los niños guaraníes aprenden a contar cantando en ronda.'
     },
     {
       id: 604,
       type: 'multiple_choice',
-      prompt_spanish: '¿Qué significa "Irundy"?',
-      prompt_guarani: 'Mba\'éipa Irundy?',
-      audio_text: 'Irundy',
-      correct_answer: 'Irundy',
+      prompt_spanish: '¿Cuál es "Dos"?',
+      prompt_guarani: 'Mba\'éichapa Mokõi?',
+      audio_text: 'Mokõi',
+      correct_answer: 'Mokõi',
       options: [
-        { id: 'a', text: 'Cuatro', isCorrect: true },
-        { id: 'b', text: 'Uno', isCorrect: false },
-        { id: 'c', text: 'Dos', isCorrect: false },
-        { id: 'd', text: 'Cinco', isCorrect: false }
+        { id: 'a', text: 'Mokõi', isCorrect: true },
+        { id: 'b', text: 'Peteĩ', isCorrect: false },
+        { id: 'c', text: 'Mbohapy', isCorrect: false },
+        { id: 'd', text: 'Irundy', isCorrect: false }
       ],
-      explanation: 'Irundy = Cuatro.',
-      cultural_fact: 'Los números guaraníes son base 5.'
+      explanation: 'Mokõi = Dos.',
+      cultural_fact: 'El número dos representa la dualidad en la cosmovisión guaraní.'
     },
     {
       id: 605,
@@ -714,25 +714,8 @@ export const LOCAL_EXERCISES = {
       prompt_guarani: 'Peteĩ = Uno?',
       audio_text: 'Peteĩ',
       correct_answer: 'true',
-      explanation: '¡Correcto! Peteĩ = Uno.',
-      cultural_fact: 'Cada número guarda memoria.'
-    }
-  ],
-
-  7: [
-    {
-      id: 701,
-      type: 'matching_pairs',
-      prompt_spanish: 'Empareja cada animal con su nombre en Guaraní',
-      prompt_guarani: 'Eñono ojoykére mymba reta',
-      pairs: [
-        { id: 'p1', left: 'Zorro', right: 'Aguará' },
-        { id: 'p2', left: 'Jaguar', right: 'Yagua' },
-        { id: 'p3', left: 'Armadillo', right: 'Tatú' },
-        { id: 'p4', left: 'Venado', right: 'Guasu' }
-      ],
-      explanation: '¡Excelente memoria!',
-      cultural_fact: 'Cada animal aparece en fábulas guaraníes.'
+      explanation: '¡Correcto! Peteĩ es Uno.',
+      cultural_fact: 'El uno es el inicio de todo conteo ritual.'
     }
   ]
 };

@@ -18,11 +18,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/aguara_mascot.jpg",
         "backgroundColor": "#FFF8F0"
-      }
+      },
+      "package": "com.navia10.guaraniapp"
     },
     "web": {
       "favicon": "./assets/images/aguara_mascot.jpg",
       "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e87d20b2-254f-4141-8c04-24a32912f2c0"
+      }
     }
   }
 }
